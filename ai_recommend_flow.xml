@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="Electron" modified="2026-03-21T09:00:00.000Z" agent="draw.io" version="21.0.0" type="device">
+  <diagram name="AI Recommendation Flow" id="ai-recommend">
+    <mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="2200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ===== TITLE ===== -->
+        <mxCell id="title" value="🤖 LUỒNG AI RECOMMENDATION ENGINE — E-LEARNING SYSTEM" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=22;fontStyle=1;fontColor=#1a1a2e;" vertex="1" parent="1">
+          <mxGeometry x="250" y="20" width="900" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ===== ROW 1: SINH VIÊN (Actor) ===== -->
+        <mxCell id="student" value="👤 Sinh viên&#xa;(Frontend React)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="675" y="80" width="50" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ===== ROW 2: API GATEWAY ===== -->
+        <mxCell id="api_group" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0f4ff;strokeColor=#1e3a5f;strokeWidth=2;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="280" y="200" width="840" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="api_title" value="🌐 FastAPI — recommendation_api.py · Port 5003" style="text;html=1;fontSize=14;fontStyle=1;fontColor=#1e3a5f;align=left;" vertex="1" parent="1">
+          <mxGeometry x="300" y="205" width="500" height="25" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api_recv" value="📥 Nhận&#xa;BehaviorData&#xa;(Pydantic)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="310" y="245" width="130" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="api_profile" value="🔢 Phân loại Profile&#xa;≥80 → excellent&#xa;≥60 → good&#xa;≥40 → average&#xa;&lt;40 → struggling" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="490" y="238" width="160" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="api_hash" value="#️⃣ Hash user_id&#xa;→ student_idx&#xa;(embedding index)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="700" y="245" width="160" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="api_interact" value="🔄 Xây interaction&#xa;list từ scores&#xa;&amp; time_spent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="910" y="245" width="150" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- API inner edges - simple left to right -->
+        <mxCell id="ae1" style="rounded=0;strokeColor=#6c8ebf;strokeWidth=1.5;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="api_recv" target="api_profile" parent="1"><mxGeometry as="geometry" /></mxCell>
+        <mxCell id="ae2" style="rounded=0;strokeColor=#d6b656;strokeWidth=1.5;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="api_profile" target="api_hash" parent="1"><mxGeometry as="geometry" /></mxCell>
+        <mxCell id="ae3" style="rounded=0;strokeColor=#d6b656;strokeWidth=1.5;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="api_hash" target="api_interact" parent="1"><mxGeometry as="geometry" /></mxCell>
+
+        <!-- Student -> API -->
+        <mxCell id="e_stu_api" style="rounded=0;strokeColor=#6c8ebf;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="student" target="api_recv" parent="1">
+          <mxGeometry as="geometry"><Array as="points"><mxPoint x="700" y="190" /><mxPoint x="375" y="190" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_stu_api_l" value="POST /recommend&#xa;{user_id, scores, time_spent...}" style="edgeLabel;html=1;fontSize=10;fontColor=#6c8ebf;align=center;" vertex="1" connectable="0" parent="e_stu_api">
+          <mxGeometry x="0.2" relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ===== ROW 3: TWO MODELS SIDE BY SIDE ===== -->
+
+        <!-- NCF Model (LEFT) -->
+        <mxCell id="ncf_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf5ea;strokeColor=#00875a;strokeWidth=2;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="80" y="440" width="520" height="370" as="geometry" />
+        </mxCell>
+        <mxCell id="ncf_title" value="🧠 Model 1 — Neural Collaborative Filtering (NCF)&#xa;TensorFlow / Keras" style="text;html=1;fontSize=13;fontStyle=1;fontColor=#00875a;align=left;" vertex="1" parent="1">
+          <mxGeometry x="100" y="448" width="460" height="35" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ncf_in" value="📥 Input&#xa;student_idx + lesson_idx&#xa;(duyệt tất cả bài chưa làm)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="200" y="495" width="220" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="ncf_emb" value="🔲 Embedding Layer&#xa;Student → vector 32-dim&#xa;Lesson  → vector 32-dim" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="200" y="575" width="220" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="ncf_gmf" value="✖️ GMF Path&#xa;Element-wise Product" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="110" y="660" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ncf_mlp" value="🔗 MLP Path&#xa;Concat→Dense64→Dense32" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="340" y="660" width="190" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ncf_out" value="🔗 Combine → Dense 32&#xa;→ Sigmoid → Score (0-100)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b6d7a8;strokeColor=#6aa84f;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="190" y="740" width="240" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- NCF edges - straight down -->
+        <mxCell id="ne1" style="rounded=0;strokeColor=#82b366;strokeWidth=1.5;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="ncf_in" target="ncf_emb" parent="1"><mxGeometry as="geometry" /></mxCell>
+        <mxCell id="ne2" style="rounded=0;strokeColor=#82b366;strokeWidth=1.5;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="ncf_emb" target="ncf_gmf" parent="1"><mxGeometry as="geometry" /></mxCell>
+        <mxCell id="ne3" style="rounded=0;strokeColor=#82b366;strokeWidth=1.5;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="ncf_emb" target="ncf_mlp" parent="1"><mxGeometry as="geometry" /></mxCell>
+        <mxCell id="ne4" style="rounded=0;strokeColor=#82b366;strokeWidth=1.5;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" edge="1" source="ncf_gmf" target="ncf_out" parent="1"><mxGeometry as="geometry" /></mxCell>
+        <mxCell id="ne5" style="rounded=0;strokeColor=#82b366;strokeWidth=1.5;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" edge="1" source="ncf_mlp" target="ncf_out" parent="1"><mxGeometry as="geometry" /></mxCell>
+
+        <!-- BA Model (RIGHT) -->
+        <mxCell id="ba_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3eaf8;strokeColor=#7b1fa2;strokeWidth=2;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="800" y="440" width="500" height="370" as="geometry" />
+        </mxCell>
+        <mxCell id="ba_title" value="📊 Model 2 — Behavioral Analytics (BA)&#xa;TensorFlow / Scikit-learn" style="text;html=1;fontSize=13;fontStyle=1;fontColor=#7b1fa2;align=left;" vertex="1" parent="1">
+          <mxGeometry x="820" y="448" width="450" height="35" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ba_feat" value="📥 10 Features&#xa;• avg_daily_study_min  • login_freq_weekly&#xa;• avg_score  • std_score  • avg_time&#xa;• completion_rate  • total_lessons&#xa;• avg_attempts  • avg_hints  • forum_posts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;align=left;" vertex="1" parent="1">
+          <mxGeometry x="870" y="495" width="360" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="ba_scale" value="⚖️ MinMaxScaler&#xa;Chuẩn hóa về [0, 1]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="940" y="615" width="220" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="ba_dnn" value="🧠 DNN Classifier&#xa;Input(10) → Dense 64 → BatchNorm → Dropout(0.3)&#xa;→ Dense 32 → Dropout(0.2) → Softmax(4)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="870" y="690" width="360" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Engagement output boxes -->
+        <mxCell id="eng_out" value="🟢 High   🔵 Medium   🟡 Low   🔴 At_risk&#xa;+ Confidence %" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5a6bd;strokeColor=#9673a6;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="890" y="775" width="320" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- BA edges - straight down -->
+        <mxCell id="be1" style="rounded=0;strokeColor=#9673a6;strokeWidth=1.5;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="ba_feat" target="ba_scale" parent="1"><mxGeometry as="geometry" /></mxCell>
+        <mxCell id="be2" style="rounded=0;strokeColor=#9673a6;strokeWidth=1.5;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="ba_scale" target="ba_dnn" parent="1"><mxGeometry as="geometry" /></mxCell>
+        <mxCell id="be3" style="rounded=0;strokeColor=#9673a6;strokeWidth=1.5;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="ba_dnn" target="eng_out" parent="1"><mxGeometry as="geometry" /></mxCell>
+
+        <!-- API -> NCF (straight down from left side of api_interact) -->
+        <mxCell id="e_api_ncf" style="rounded=1;strokeColor=#00875a;strokeWidth=2;exitX=0;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="api_interact" target="ncf_in" parent="1">
+          <mxGeometry as="geometry"><Array as="points"><mxPoint x="700" y="420" /><mxPoint x="310" y="420" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_api_ncf_l" value="Dữ liệu bài học" style="edgeLabel;html=1;fontSize=10;fontColor=#00875a;" vertex="1" connectable="0" parent="e_api_ncf">
+          <mxGeometry x="-0.2" relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- API -> BA (straight down from right side of api_interact) -->
+        <mxCell id="e_api_ba" style="rounded=1;strokeColor=#7b1fa2;strokeWidth=2;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="api_interact" target="ba_feat" parent="1">
+          <mxGeometry as="geometry"><Array as="points"><mxPoint x="1050" y="420" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_api_ba_l" value="Dữ liệu hành vi" style="edgeLabel;html=1;fontSize=10;fontColor=#7b1fa2;" vertex="1" connectable="0" parent="e_api_ba">
+          <mxGeometry x="-0.2" relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ===== ROW 4: RECOMMENDATION ENGINE ===== -->
+        <mxCell id="eng_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff7e6;strokeColor=#f97316;strokeWidth=2;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="150" y="900" width="1100" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="eng_title" value="⚙️ Recommendation Engine — Tổng hợp &amp; Ra quyết định cuối cùng" style="text;html=1;fontSize=14;fontStyle=1;fontColor=#c2410c;align=left;" vertex="1" parent="1">
+          <mxGeometry x="170" y="908" width="600" height="25" as="geometry" />
+        </mxCell>
+
+        <mxCell id="eng_diff" value="🎯 Chọn độ khó&#xa;avg≥80→Hard&#xa;avg≥60→Medium&#xa;avg&lt;60→Easy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="180" y="945" width="145" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="eng_rank" value="🏆 Xếp hạng&#xa;Score × diff_match&#xa;× subject_match&#xa;(ưu tiên sở thích)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="365" y="945" width="170" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="eng_weak" value="📉 Môn yếu&#xa;&lt;50đ → Ôn lại&#xa;&lt;70đ → Luyện thêm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="575" y="945" width="160" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="eng_merge" value="🔀 Ghép kết quả&#xa;NCF gợi ý&#xa;+ BA engagement" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="775" y="945" width="155" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="eng_warn" value="🚨 Cảnh báo&#xa;At_risk → ⛔ Khẩn&#xa;Low → ⚠️ Vàng&#xa;Score&lt;40 → 📉" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="970" y="945" width="155" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Engine inner edges left-to-right -->
+        <mxCell id="ee1" style="rounded=0;strokeColor=#d79b00;strokeWidth=1.5;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="eng_diff" target="eng_rank" parent="1"><mxGeometry as="geometry" /></mxCell>
+        <mxCell id="ee2" style="rounded=0;strokeColor=#d79b00;strokeWidth=1.5;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="eng_rank" target="eng_weak" parent="1"><mxGeometry as="geometry" /></mxCell>
+        <mxCell id="ee3" style="rounded=0;strokeColor=#d79b00;strokeWidth=1.5;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="eng_weak" target="eng_merge" parent="1"><mxGeometry as="geometry" /></mxCell>
+        <mxCell id="ee4" style="rounded=0;strokeColor=#d79b00;strokeWidth=1.5;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="eng_merge" target="eng_warn" parent="1"><mxGeometry as="geometry" /></mxCell>
+
+        <!-- NCF -> Engine (straight down) -->
+        <mxCell id="e_ncf_eng" style="rounded=0;strokeColor=#00875a;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="ncf_out" target="eng_diff" parent="1">
+          <mxGeometry as="geometry"><Array as="points"><mxPoint x="310" y="860" /><mxPoint x="253" y="860" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_ncf_eng_l" value="Top-K bài gợi ý + Score" style="edgeLabel;html=1;fontSize=10;fontColor=#00875a;" vertex="1" connectable="0" parent="e_ncf_eng">
+          <mxGeometry x="-0.3" relative="1" as="geometry"><mxPoint x="-70" as="offset" /></mxGeometry>
+        </mxCell>
+
+        <!-- BA -> Engine (straight down) -->
+        <mxCell id="e_ba_eng" style="rounded=0;strokeColor=#7b1fa2;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="eng_out" target="eng_merge" parent="1">
+          <mxGeometry as="geometry"><Array as="points"><mxPoint x="1050" y="860" /><mxPoint x="853" y="860" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_ba_eng_l" value="Engagement level + Confidence" style="edgeLabel;html=1;fontSize=10;fontColor=#7b1fa2;" vertex="1" connectable="0" parent="e_ba_eng">
+          <mxGeometry x="-0.3" relative="1" as="geometry"><mxPoint x="80" as="offset" /></mxGeometry>
+        </mxCell>
+
+        <!-- ===== ROW 5: OUTPUT ===== -->
+        <mxCell id="output" value="📦 JSON Response&#xa;&#xa;• next_lessons (Top 5 bài gợi ý)&#xa;• engagement + confidence %&#xa;• weak_subjects + suggestion&#xa;• warnings (critical / warning / info)&#xa;• recommended_difficulty&#xa;• stats: avg_score, completion_rate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e3a5f;strokeColor=#3b82f6;strokeWidth=2;fontSize=12;fontColor=#e2e8f0;fontStyle=0;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="470" y="1120" width="280" height="150" as="geometry" />
+        </mxCell>
+
+        <!-- Engine -> Output -->
+        <mxCell id="e_eng_out" style="rounded=0;strokeColor=#c2410c;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="eng_warn" target="output" parent="1">
+          <mxGeometry as="geometry"><Array as="points"><mxPoint x="1048" y="1090" /><mxPoint x="610" y="1090" /></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ===== ROW 6: FRONTEND ===== -->
+        <mxCell id="frontend" value="📱 Frontend hiển thị&#xa;Lộ trình học tập cá nhân&#xa;&amp; Cảnh báo học vụ" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="480" y="1330" width="260" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Output -> Frontend -->
+        <mxCell id="e_out_fe" style="rounded=0;strokeColor=#6c8ebf;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="output" target="frontend" parent="1">
+          <mxGeometry as="geometry" />
+        </mxCell>
+
+        <!-- ===== LEGEND ===== -->
+        <mxCell id="legend_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#999;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="100" width="260" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_title" value="📌 CHÚ THÍCH" style="text;html=1;fontSize=13;fontStyle=1;fontColor=#333;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="108" width="160" height="25" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lg1c" value="" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="1370" y="145" width="30" height="18" as="geometry" /></mxCell>
+        <mxCell id="lg1t" value="API / Xử lý dữ liệu" style="text;html=1;fontSize=11;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="1410" y="143" width="180" height="22" as="geometry" /></mxCell>
+
+        <mxCell id="lg2c" value="" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="1370" y="180" width="30" height="18" as="geometry" /></mxCell>
+        <mxCell id="lg2t" value="NCF Model (TensorFlow)" style="text;html=1;fontSize=11;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="1410" y="178" width="180" height="22" as="geometry" /></mxCell>
+
+        <mxCell id="lg3c" value="" style="rounded=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="1370" y="215" width="30" height="18" as="geometry" /></mxCell>
+        <mxCell id="lg3t" value="Behavioral Analytics (TF+SK)" style="text;html=1;fontSize=11;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="1410" y="213" width="180" height="22" as="geometry" /></mxCell>
+
+        <mxCell id="lg4c" value="" style="rounded=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1"><mxGeometry x="1370" y="250" width="30" height="18" as="geometry" /></mxCell>
+        <mxCell id="lg4t" value="Recommendation Engine" style="text;html=1;fontSize=11;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="1410" y="248" width="180" height="22" as="geometry" /></mxCell>
+
+        <mxCell id="lg5c" value="" style="rounded=1;fillColor=#1e3a5f;strokeColor=#3b82f6;" vertex="1" parent="1"><mxGeometry x="1370" y="285" width="30" height="18" as="geometry" /></mxCell>
+        <mxCell id="lg5t" value="Output → Frontend" style="text;html=1;fontSize=11;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="1410" y="283" width="180" height="22" as="geometry" /></mxCell>
+
+        <mxCell id="lg6c" value="" style="rounded=1;fillColor=#d5a6bd;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="1370" y="320" width="30" height="18" as="geometry" /></mxCell>
+        <mxCell id="lg6t" value="Engagement Level Output" style="text;html=1;fontSize=11;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="1410" y="318" width="180" height="22" as="geometry" /></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
