@@ -62,11 +62,11 @@ echo ============================================================
 echo    ALL SERVICES RUNNING!
 echo ============================================================
 echo.
-echo    Frontend:     https://192.168.88.175:3000
-echo    Backend API:  http://192.168.88.175:5000/api
-echo    AI Vision:    http://192.168.88.175:5001
-echo    AI Voice:     http://192.168.88.175:5002
-echo    AI Recommend: http://192.168.88.175:5003
+echo    Frontend:     https://192.168.88.151:3000
+echo    Backend API:  http://192.168.88.151:5000/api
+echo    AI Vision:    http://192.168.88.151:5001
+echo    AI Voice:     http://192.168.88.151:5002
+echo    AI Recommend: http://172.20.10.2:5003
 echo.
 echo    Press any key to stop all services...
 pause >nul

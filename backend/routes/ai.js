@@ -185,6 +185,201 @@ router.post('/engagement', auth, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── [D6] GET /api/ai/my-data — Tổng hợp data thực tế từ DB → gọi AI ──
+router.get('/my-data', auth, async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const AttendanceSession = require('../models/Attendance');
+        const Assignment = require('../models/Assignment');
+        const Classroom = require('../models/Classroom');
+
+        // 1. Lấy tất cả lớp học của user
+        const classroomQuery = req.user.role === 'teacher'
+            ? { teacher: userId }
+            : { students: userId };
+        const classrooms = await Classroom.find({ ...classroomQuery, isActive: true })
+            .select('_id name subject');
+
+        const classroomIds = classrooms.map(c => c._id);
+
+        // 2. Lấy điểm từ bài tập đã chấm
+        const assignments = await Assignment.find({
+            classroom: { $in: classroomIds },
+            isPublished: true,
+        }).lean();
+
+        const scores = [];
+        const timeSpent = [];
+        const completedLessons = [];
+        const subjectScores = {};  // subject → [scores]
+
+        for (const assign of assignments) {
+            const mySub = assign.submissions?.find(
+                s => s.student.toString() === userId.toString() && s.score !== null
+            );
+            if (mySub) {
+                const pct = Math.round((mySub.score / (mySub.maxScore || assign.maxScore || 100)) * 100);
+                scores.push(pct);
+                timeSpent.push(30); // default 30 min per assignment
+                completedLessons.push(assign._id.toString());
+
+                // Map by classroom subject
+                const cls = classrooms.find(c => c._id.toString() === assign.classroom.toString());
+                if (cls?.subject) {
+                    if (!subjectScores[cls.subject]) subjectScores[cls.subject] = [];
+                    subjectScores[cls.subject].push(pct);
+                }
+            }
+        }
+
+        // 3. Tính tỉ lệ điểm danh → thêm vào scores nếu ít bài tập
+        const attSessions = await AttendanceSession.find({
+            classroom: { $in: classroomIds }
+        }).select('records').lean();
+
+        let attendedCount = 0;
+        let totalSessions = attSessions.length;
+        for (const sess of attSessions) {
+            const rec = sess.records?.find(r => r.student.toString() === userId.toString());
+            if (rec?.status === 'present') attendedCount++;
+        }
+        const attendanceRate = totalSessions > 0 ? Math.round(attendedCount / totalSessions * 100) : 70;
+
+        // 4. User stats
+        const avgDailyStudy = req.user.stats?.totalStudyMin
+            ? Math.round(req.user.stats.totalStudyMin / Math.max(1, req.user.stats.loginCount || 1))
+            : 45;
+        const loginFreq = Math.min(7, req.user.stats?.loginCount || 1);
+
+        // Nếu không có scores từ bài tập → dùng attendance rate như một điểm
+        if (scores.length === 0) {
+            scores.push(attendanceRate);
+            timeSpent.push(avgDailyStudy);
+        }
+
+        // 5. Gọi AI recommendation (chỉ lấy engagement analysis)
+        let engagement = null;
+        try {
+            const payload = {
+                user_id: userId.toString(),
+                avg_daily_study_min: avgDailyStudy,
+                login_freq_weekly: loginFreq,
+                scores,
+                time_spent: timeSpent,
+                completed_lessons: completedLessons,
+                forum_posts: 0,
+                role: req.user.role,
+                preferred_subjects: req.user.preferredSubjects || [],
+            };
+            const aiRes = await axios.post(`${process.env.AI_RECOMMEND_URL}/recommend`, payload, { timeout: 30000 });
+            engagement = aiRes.data.engagement || null;
+
+            // Update engagement level trong DB
+            if (engagement?.engagement) {
+                await req.user.constructor.findByIdAndUpdate(userId, {
+                    'stats.engagementLevel': engagement.engagement
+                });
+            }
+        } catch (aiErr) {
+            console.warn('[AI my-data] AI service unavailable, using local data only:', aiErr.message);
+        }
+
+        // 6. Tính toán dữ liệu THẬT từ DB — không dùng dataset giả
+        const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+
+        // Weak subjects — môn có điểm TB < 70 (từ dữ liệu thật)
+        const weakSubjects = [];
+        for (const [subject, subScores] of Object.entries(subjectScores)) {
+            const avg = Math.round(subScores.reduce((a, b) => a + b, 0) / subScores.length);
+            if (avg < 70) {
+                let suggestion = '';
+                if (avg < 40) suggestion = 'Cần ôn tập lại kiến thức cơ bản ngay';
+                else if (avg < 55) suggestion = 'Nên luyện thêm bài tập và xem lại lý thuyết';
+                else suggestion = 'Gần đạt yêu cầu, cần luyện tập thêm một chút';
+                weakSubjects.push({ subject, avg_score: avg, suggestion });
+            }
+        }
+        weakSubjects.sort((a, b) => a.avg_score - b.avg_score);
+
+        // Gợi ý tiếp theo — dựa trên lớp học THẬT mà sinh viên đang tham gia
+        const nextLessons = [];
+        for (const cls of classrooms) {
+            const clsAssignments = assignments.filter(a => a.classroom.toString() === cls._id.toString());
+            const clsScores = subjectScores[cls.subject] || [];
+            const clsAvg = clsScores.length > 0 ? Math.round(clsScores.reduce((a, b) => a + b, 0) / clsScores.length) : null;
+
+            // Tính bài chưa nộp
+            const notSubmitted = clsAssignments.filter(a => {
+                const sub = a.submissions?.find(s => s.student.toString() === userId.toString());
+                return !sub;
+            }).length;
+
+            let difficulty = 'medium';
+            let predicted = 70;
+            if (clsAvg !== null) {
+                if (clsAvg >= 85) { difficulty = 'hard'; predicted = Math.min(95, clsAvg + 5); }
+                else if (clsAvg >= 60) { difficulty = 'medium'; predicted = Math.round(clsAvg * 1.05); }
+                else { difficulty = 'easy'; predicted = Math.round(clsAvg * 1.1); }
+            }
+
+            nextLessons.push({
+                classroom_id: cls._id,
+                classroom_name: cls.name,
+                subject: cls.subject || cls.name,
+                difficulty,
+                predicted_score: Math.min(100, predicted),
+                total_assignments: clsAssignments.length,
+                not_submitted: notSubmitted,
+                avg_score: clsAvg,
+            });
+        }
+        // Sắp xếp: ưu tiên lớp có bài chưa nộp, sau đó lớp điểm thấp
+        nextLessons.sort((a, b) => (b.not_submitted - a.not_submitted) || ((a.avg_score ?? 999) - (b.avg_score ?? 999)));
+
+        // Warnings — cảnh báo dựa trên dữ liệu thật
+        const warnings = [];
+        if (engagement?.engagement === 'at_risk') {
+            warnings.push({ type: 'critical', icon: '🔴', message: 'Mức độ tương tác rất thấp! Cần tăng cường học tập ngay.' });
+        } else if (engagement?.engagement === 'low') {
+            warnings.push({ type: 'warning', icon: '🟡', message: 'Mức độ tương tác thấp. Nên tham gia lớp học và làm bài tập thường xuyên hơn.' });
+        }
+        if (avgScore > 0 && avgScore < 50) {
+            warnings.push({ type: 'warning', icon: '📉', message: `Điểm trung bình thấp (${avgScore}/100). Cần ôn tập lại kiến thức.` });
+        }
+        if (attendanceRate < 80 && totalSessions > 0) {
+            warnings.push({ type: 'warning', icon: '📋', message: `Tỉ lệ điểm danh chỉ ${attendanceRate}%. Cần đi học đầy đủ hơn.` });
+        }
+        const totalNotSubmitted = assignments.filter(a => !a.submissions?.find(s => s.student.toString() === userId.toString())).length;
+        if (totalNotSubmitted > 0) {
+            warnings.push({ type: 'warning', icon: '📝', message: `Còn ${totalNotSubmitted} bài tập chưa nộp. Hãy hoàn thành sớm!` });
+        }
+
+        res.json({
+            engagement,
+            next_lessons: nextLessons,
+            weak_subjects: weakSubjects,
+            warnings,
+            stats: {
+                avg_score: avgScore,
+                total_completed: scores.length,
+                total_lessons: assignments.length,
+                completion_rate: assignments.length > 0 ? Math.round(scores.length / assignments.length * 100) / 100 : 0,
+            },
+            meta: {
+                classrooms: classrooms.map(c => ({ id: c._id, name: c.name, subject: c.subject })),
+                attendanceRate,
+                totalAssignments: assignments.length,
+                gradedAssignments: scores.length,
+                subjectScores,
+                totalNotSubmitted,
+            }
+        });
+    } catch (err) {
+        console.error('[AI my-data] error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ── AI Services Health ──
 router.get('/health', async (req, res) => {
     const checks = {};

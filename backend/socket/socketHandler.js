@@ -6,6 +6,21 @@ module.exports = (io) => {
     io.on('connection', (socket) => {
         console.log(`🔌 Socket connected: ${socket.id}`);
 
+        // ── [N6] Personal room — để nhận thông báo cá nhân (assignmentGraded, etc.) ──
+        socket.on('subscribeUser', ({ userId }) => {
+            if (userId) {
+                socket.join(`user_${userId}`);
+                console.log(`🔔 User ${userId} subscribed to personal room`);
+            }
+        });
+
+        // ── [N6] Subscribe classrooms — nhận newAssignment khi không trong meeting ──
+        socket.on('subscribeClassrooms', ({ classroomIds }) => {
+            if (Array.isArray(classroomIds)) {
+                classroomIds.forEach(cid => socket.join(`classroom_${cid}`));
+            }
+        });
+
         // ── Legacy session support ──
         socket.on('joinSession', ({ sessionId, userId, role }) => {
             socket.join(`session_${sessionId}`);
@@ -46,6 +61,18 @@ module.exports = (io) => {
             const participants = Object.values(rooms[classroomId])
                 .filter(p => p.socketId !== socket.id);
             socket.emit('existingParticipants', participants);
+
+            // Send existing screen share info if someone is sharing
+            const sharingUser = Object.values(rooms[classroomId])
+                .find(p => p.screenSharing && p.socketId !== socket.id);
+            if (sharingUser) {
+                socket.emit('screenShareUpdate', {
+                    socketId: sharingUser.socketId,
+                    userId: sharingUser.userId,
+                    userName: sharingUser.userName,
+                    active: true
+                });
+            }
 
             // Notify others about new participant
             socket.to(roomKey).emit('participantJoined', {
@@ -103,6 +130,10 @@ module.exports = (io) => {
         // Screen share started/stopped
         socket.on('screenShare', ({ classroomId, active }) => {
             const roomKey = `classroom_${classroomId}`;
+            // Track screen share state
+            if (rooms[classroomId] && rooms[classroomId][socket.id]) {
+                rooms[classroomId][socket.id].screenSharing = active;
+            }
             socket.to(roomKey).emit('screenShareUpdate', {
                 socketId: socket.id,
                 userId: socket.meetingUser?.userId,
@@ -151,6 +182,7 @@ module.exports = (io) => {
 
         if (rooms[classroomId]) {
             const user = rooms[classroomId][socket.id];
+            const wasSharing = user?.screenSharing;
             delete rooms[classroomId][socket.id];
 
             if (Object.keys(rooms[classroomId]).length === 0) {
@@ -162,6 +194,16 @@ module.exports = (io) => {
                 userId: user?.userId,
                 userName: user?.userName
             });
+
+            // Notify if screen share stopped because user left
+            if (wasSharing) {
+                socket.to(roomKey).emit('screenShareUpdate', {
+                    socketId: socket.id,
+                    userId: user?.userId,
+                    userName: user?.userName,
+                    active: false
+                });
+            }
 
             if (user) {
                 console.log(`📹 ${user.userName} left meeting ${classroomId}`);

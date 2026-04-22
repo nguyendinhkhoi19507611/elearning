@@ -1,8 +1,28 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const Classroom = require('../models/Classroom');
 const User = require('../models/User');
 const { auth, authorize } = require('../middleware/auth');
+
+// Multer config for recording uploads
+const recordingStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dir = path.join(__dirname, '..', 'uploads', 'recordings');
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname) || '.webm';
+        cb(null, `rec_${req.params.id}_${Date.now()}${ext}`);
+    }
+});
+const uploadRecording = multer({
+    storage: recordingStorage,
+    limits: { fileSize: 500 * 1024 * 1024 } // 500MB max
+});
 
 // Kiểm tra lịch học có đang trong khung giờ hôm nay không
 function isScheduledNow(schedule) {
@@ -51,6 +71,18 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
+// ── GET /api/classrooms/live/now — Get classrooms with active meeting ── [BUG-01 FIX: must be before /:id]
+router.get('/live/now', auth, async (req, res) => {
+    try {
+        const classrooms = await Classroom.find({ 'meeting.isLive': true, isActive: true })
+            .populate('teacher', 'name email avatar')
+            .populate('students', 'name email avatar');
+        res.json(classrooms);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ── GET /api/classrooms/:id — Single classroom ──
 router.get('/:id', auth, async (req, res) => {
     try {
@@ -68,7 +100,7 @@ router.get('/:id', auth, async (req, res) => {
 // ── POST /api/classrooms — Create classroom (admin) ──
 router.post('/', auth, authorize('admin'), async (req, res) => {
     try {
-        const { name, subject, description, teacherId, studentIds, schedule, settings } = req.body;
+        const { name, subject, description, teacherId, studentIds, schedule, settings, classCode, semester, academicYear } = req.body;
 
         // Validate teacher
         const teacher = await User.findById(teacherId);
@@ -88,6 +120,9 @@ router.post('/', auth, authorize('admin'), async (req, res) => {
             name, subject, description,
             teacher: teacherId,
             students: studentIds || [],
+            classCode: classCode || undefined,
+            semester: semester || undefined,
+            academicYear: academicYear || undefined,
             schedule: schedule || { dayOfWeek: [1], startTime: '08:00', endTime: '10:00' },
             settings: settings || {},
             createdBy: req.user._id,
@@ -120,6 +155,13 @@ router.put('/:id', auth, authorize('admin'), async (req, res) => {
 router.delete('/:id', auth, authorize('admin'), async (req, res) => {
     try {
         await Classroom.findByIdAndUpdate(req.params.id, { isActive: false });
+
+        // [BUG-06 FIX] Xóa Assignment và AttendanceSession liên quan khi soft-delete lớp
+        const Assignment = require('../models/Assignment');
+        const AttendanceSession = require('../models/Attendance');
+        await Assignment.deleteMany({ classroom: req.params.id });
+        await AttendanceSession.deleteMany({ classroom: req.params.id });
+
         res.json({ message: 'Classroom deleted' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -133,7 +175,9 @@ router.post('/:id/students', auth, authorize('admin'), async (req, res) => {
         const classroom = await Classroom.findById(req.params.id);
         if (!classroom) return res.status(404).json({ error: 'Classroom not found' });
 
-        const newIds = studentIds.filter(id => !classroom.students.includes(id));
+        // [BUG-07 FIX] Convert ObjectId → string trước khi so sánh để tránh duplicate
+        const existingIds = classroom.students.map(s => s.toString());
+        const newIds = studentIds.filter(id => !existingIds.includes(id));
         classroom.students.push(...newIds);
         await classroom.save();
         await classroom.populate('students', 'name email avatar');
@@ -169,9 +213,11 @@ router.post('/:id/meeting/start', auth, async (req, res) => {
         }
 
         // Kiểm tra lịch học — admin bỏ qua hạn chế này
-        if (req.user.role !== 'admin' && !isScheduledNow(classroom.schedule)) {
+        // [BUG-15 FIX] Nếu lớp chưa có schedule (thiếu startTime/endTime), cho phép start tự do
+        const hasSchedule = classroom.schedule && classroom.schedule.startTime && classroom.schedule.endTime;
+        if (req.user.role !== 'admin' && hasSchedule && !isScheduledNow(classroom.schedule)) {
             const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-            const schedDays = classroom.schedule.dayOfWeek.map(d => days[d]).join(', ');
+            const schedDays = (classroom.schedule.dayOfWeek || []).map(d => days[d]).join(', ');
             return res.status(400).json({
                 error: `Chưa đến giờ học. Lịch học: ${schedDays} từ ${classroom.schedule.startTime} - ${classroom.schedule.endTime}`
             });
@@ -198,13 +244,26 @@ router.post('/:id/meeting/start', auth, async (req, res) => {
 // ── POST /api/classrooms/:id/meeting/end — End meeting ──
 router.post('/:id/meeting/end', auth, async (req, res) => {
     try {
-        const classroom = await Classroom.findById(req.params.id);
+        const classroom = await Classroom.findById(req.params.id)
+            .populate('students', '_id');
         if (!classroom) return res.status(404).json({ error: 'Classroom not found' });
 
-        // Teacher của lớp hoặc admin mới được kết thúc
         const isTeacher = classroom.teacher.toString() === req.user._id.toString();
         if (req.user.role !== 'admin' && !isTeacher) {
             return res.status(403).json({ error: 'Chỉ giáo viên của lớp hoặc admin mới kết thúc được' });
+        }
+
+        // [D7] Tính thời gian học và cập nhật totalStudyMin cho tất cả sinh viên
+        const startedAt = classroom.meeting?.startedAt;
+        if (startedAt) {
+            const durationMin = Math.round((Date.now() - new Date(startedAt).getTime()) / 60000);
+            if (durationMin > 0 && classroom.students?.length > 0) {
+                const studentIds = classroom.students.map(s => s._id || s);
+                await User.updateMany(
+                    { _id: { $in: studentIds } },
+                    { $inc: { 'stats.totalStudyMin': durationMin } }
+                );
+            }
         }
 
         classroom.meeting.isLive = false;
@@ -222,13 +281,45 @@ router.post('/:id/meeting/end', auth, async (req, res) => {
     }
 });
 
-// ── GET /api/classrooms/live/now — Get classrooms with active meeting ──
-router.get('/live/now', auth, async (req, res) => {
+// [BUG-01 FIXED] /live/now route moved above /:id — see line 75
+
+// ── POST /api/classrooms/:id/recording — Upload meeting recording ──
+router.post('/:id/recording', auth, authorize('teacher', 'admin'), uploadRecording.single('recording'), async (req, res) => {
     try {
-        const classrooms = await Classroom.find({ 'meeting.isLive': true, isActive: true })
-            .populate('teacher', 'name email avatar')
-            .populate('students', 'name email avatar');
-        res.json(classrooms);
+        if (!req.file) return res.status(400).json({ error: 'No recording file' });
+
+        const classroom = await Classroom.findById(req.params.id);
+        if (!classroom) return res.status(404).json({ error: 'Classroom not found' });
+
+        const recording = {
+            filename: req.file.filename,
+            originalName: req.body.title || `Bản ghi ${new Date().toLocaleString('vi-VN')}`,
+            size: req.file.size,
+            duration: parseInt(req.body.duration) || 0,
+            url: `/uploads/recordings/${req.file.filename}`,
+            uploadedBy: req.user._id,
+            uploadedByName: req.user.name,
+            createdAt: new Date(),
+        };
+
+        // Lưu vào mảng recordings
+        if (!classroom.recordings) classroom.recordings = [];
+        classroom.recordings.push(recording);
+        await classroom.save();
+
+        console.log(`🎬 Recording saved: ${req.file.filename} (${(req.file.size / 1024 / 1024).toFixed(1)}MB)`);
+        res.json({ success: true, recording });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── GET /api/classrooms/:id/recordings — List recordings ──
+router.get('/:id/recordings', auth, async (req, res) => {
+    try {
+        const classroom = await Classroom.findById(req.params.id);
+        if (!classroom) return res.status(404).json({ error: 'Classroom not found' });
+        res.json(classroom.recordings || []);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

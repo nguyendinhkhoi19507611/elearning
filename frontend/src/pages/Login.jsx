@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
     FiMail, FiLock, FiMic, FiBookOpen,
-    FiAlertCircle, FiLoader, FiEye, FiEyeOff
+    FiAlertCircle, FiLoader, FiEye, FiEyeOff, FiSquare
 } from 'react-icons/fi';
 
 export default function Login() {
@@ -14,21 +14,15 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const [voiceMode, setVoiceMode] = useState(false);
     const [recording, setRecording] = useState(false);
-    const [recordProgress, setRecordProgress] = useState(0);
+    const [processing, setProcessing] = useState(false);
     const { login, voiceLogin } = useAuth();
     const navigate = useNavigate();
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        setError(''); setLoading(true);
-        try {
-            const data = await login(email, password);
-            navigate(data.user.role === 'teacher' ? '/teacher'
-                : data.user.role === 'admin' ? '/admin' : '/student');
-        } catch (err) {
-            setError(err.response?.data?.error || 'Đăng nhập thất bại');
-        } finally { setLoading(false); }
-    };
+    const streamRef = useRef(null);
+    const audioCtxRef = useRef(null);
+    const processorRef = useRef(null);
+    const sourceRef = useRef(null);
+    const chunksRef = useRef([]);
 
     const encodeWAV = (samples, sampleRate = 16000) => {
         const buffer = new ArrayBuffer(44 + samples.length * 2);
@@ -47,41 +41,49 @@ export default function Login() {
         return new Blob([buffer], { type: 'audio/wav' });
     };
 
-    const handleVoiceLogin = async () => {
-        setRecording(true); setError(''); setRecordProgress(0);
+    const startVoiceRecording = async () => {
+        setError('');
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true }
             });
+            streamRef.current = stream;
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const actualSR = audioCtx.sampleRate;
+            audioCtxRef.current = audioCtx;
             const source = audioCtx.createMediaStreamSource(stream);
+            sourceRef.current = source;
             const processor = audioCtx.createScriptProcessor(4096, 1, 1);
-            const chunks = [];
-            processor.onaudioprocess = (e) => chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
-            source.connect(processor); processor.connect(audioCtx.destination);
+            processorRef.current = processor;
+            chunksRef.current = [];
+            processor.onaudioprocess = (e) => chunksRef.current.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+            source.connect(processor);
+            processor.connect(audioCtx.destination);
+            setRecording(true);
+        } catch (err) {
+            setError('Không thể truy cập mic: ' + err.message);
+        }
+    };
 
-            const DURATION = 5000;
-            const start = Date.now();
-            const intervalId = setInterval(() => {
-                setRecordProgress(Math.min(100, ((Date.now() - start) / DURATION) * 100));
-            }, 100);
+    const stopVoiceRecording = async () => {
+        setRecording(false);
+        setProcessing(true);
+        try {
+            const audioCtx = audioCtxRef.current;
+            const actualSR = audioCtx?.sampleRate || 48000;
+            processorRef.current?.disconnect();
+            sourceRef.current?.disconnect();
+            if (audioCtx) await audioCtx.close();
+            streamRef.current?.getTracks().forEach(t => t.stop());
+            streamRef.current = null;
 
-            await new Promise(r => setTimeout(r, DURATION));
-            clearInterval(intervalId);
-            setRecordProgress(100);
-
-            processor.disconnect(); source.disconnect();
-            await audioCtx.close();
-            stream.getTracks().forEach(t => t.stop());
-
+            const chunks = chunksRef.current;
             const totalLen = chunks.reduce((a, c) => a + c.length, 0);
             const merged = new Float32Array(totalLen);
             let off = 0;
             for (const c of chunks) { merged.set(c, off); off += c.length; }
 
             const targetSR = 16000;
-            let finalSamples = merged, finalSR = actualSR;
+            let finalSamples = merged;
             if (actualSR !== targetSR) {
                 const ratio = targetSR / actualSR;
                 const newLen = Math.round(merged.length * ratio);
@@ -91,10 +93,9 @@ export default function Login() {
                     const idx1 = Math.min(idx0 + 1, merged.length - 1);
                     finalSamples[i] = merged[idx0] * (1 - srcIdx + idx0) + merged[idx1] * (srcIdx - idx0);
                 }
-                finalSR = targetSR;
             }
 
-            const blob = encodeWAV(finalSamples, finalSR);
+            const blob = encodeWAV(finalSamples, targetSR);
             const data = await voiceLogin(blob);
             navigate(data.user.role === 'teacher' ? '/teacher'
                 : data.user.role === 'admin' ? '/admin' : '/student');
@@ -102,10 +103,24 @@ export default function Login() {
             const hint = err.response?.data?.hint || '';
             setError((err.response?.data?.error || 'Không nhận diện được giọng nói') + (hint ? ` — ${hint}` : ''));
         } finally {
-            setRecording(false);
-            setRecordProgress(0);
+            setProcessing(false);
         }
     };
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setError(''); setLoading(true);
+        try {
+            const data = await login(email, password);
+            navigate(data.user.role === 'teacher' ? '/teacher'
+                : data.user.role === 'admin' ? '/admin' : '/student');
+        } catch (err) {
+            setError(err.response?.data?.error || 'Đăng nhập thất bại');
+        } finally { setLoading(false); }
+    };
+
+
+
 
     return (
         <div className="auth-container">
@@ -170,6 +185,13 @@ export default function Login() {
                                 </button>
                             </div>
                         </div>
+                        <div style={{ textAlign: 'right', marginTop: 6, marginBottom: 4 }}>
+                            <Link to="/forgot-password" style={{
+                                color: 'var(--accent)', fontSize: '0.82em', textDecoration: 'none'
+                            }}>
+                                Quên mật khẩu?
+                            </Link>
+                        </div>
                         <button
                             className="btn btn-primary btn-lg btn-block"
                             style={{ marginTop: 8 }}
@@ -183,35 +205,43 @@ export default function Login() {
                         {/* Mic icon animated */}
                         <div style={{
                             width: 72, height: 72, borderRadius: '50%', margin: '0 auto 16px',
-                            background: recording ? 'var(--danger-light)' : 'var(--accent-light)',
+                            background: recording ? 'var(--danger-light)' : processing ? 'var(--accent-light)' : 'var(--accent-light)',
                             border: `2px solid ${recording ? 'var(--danger)' : 'var(--accent)'}`,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            animation: recording ? 'pulseGlow 1s infinite' : 'none',
+                            animation: recording ? 'pulseGlow 1s infinite' : processing ? 'pulse 1.5s infinite' : 'none',
                             transition: 'all 0.3s ease'
                         }}>
                             <FiMic size={28} color={recording ? 'var(--danger)' : 'var(--accent)'} />
                         </div>
-                        {recording && (
-                            <div style={{ marginBottom: 16 }}>
-                                <div className="progress-track" style={{ marginBottom: 8 }}>
-                                    <div className="progress-fill" style={{ width: `${recordProgress}%`, background: 'var(--danger)' }} />
-                                </div>
-                                <span style={{ fontSize: '0.8em', color: 'var(--danger)' }}>
-                                    Đang ghi âm... {Math.ceil((100 - recordProgress) / 20)}s
-                                </span>
-                            </div>
-                        )}
                         <p style={{ marginBottom: 20, color: 'var(--text-secondary)', fontSize: '0.875em' }}>
-                            {recording ? 'Hãy nói to và rõ ràng...' : 'Nhấn bên dưới để bắt đầu (5 giây)'}
+                            {processing ? '⏳ Đang nhận diện giọng nói...' :
+                                recording ? '🎙️ Hãy nói to và rõ ràng, nhấn kết thúc khi xong' :
+                                    'Nhấn bắt đầu, nói rõ ràng, rồi nhấn kết thúc'}
                         </p>
-                        <button
-                            className={`btn btn-lg btn-block ${recording ? 'btn-danger' : 'btn-primary'}`}
-                            onClick={handleVoiceLogin}
-                            disabled={recording}
-                        >
-                            <FiMic size={16} />
-                            {recording ? 'Đang nhận diện...' : 'Bắt đầu ghi âm'}
-                        </button>
+                        {!recording && !processing && (
+                            <button
+                                className="btn btn-primary btn-lg btn-block"
+                                onClick={startVoiceRecording}
+                            >
+                                <FiMic size={16} />
+                                Bắt đầu ghi âm
+                            </button>
+                        )}
+                        {recording && (
+                            <button
+                                className="btn btn-danger btn-lg btn-block"
+                                onClick={stopVoiceRecording}
+                            >
+                                <FiSquare size={16} />
+                                Kết thúc &amp; Nhận diện
+                            </button>
+                        )}
+                        {processing && (
+                            <button className="btn btn-lg btn-block" disabled style={{ opacity: 0.7 }}>
+                                <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                                Đang xử lý...
+                            </button>
+                        )}
                     </div>
                 )}
 
@@ -224,6 +254,11 @@ export default function Login() {
                     <FiMic size={15} />
                     {voiceMode ? 'Đăng nhập bằng Email' : 'Đăng nhập bằng Giọng nói'}
                 </button>
+
+                <p style={{ textAlign: 'center', marginTop: 16, fontSize: '0.84em', color: 'var(--text-muted)' }}>
+                    Chưa có tài khoản?{' '}
+                    <Link to="/register" style={{ color: 'var(--accent)', fontWeight: 600 }}>Đăng ký sinh viên</Link>
+                </p>
 
             </div>
         </div>

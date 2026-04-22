@@ -34,6 +34,9 @@ export const authAPI = {
         headers: { 'Content-Type': 'multipart/form-data' }
     }),
     me: () => api.get('/auth/me'),
+    forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+    resetPassword: (data) => api.post('/auth/reset-password', data),
+    changePassword: (data) => api.post('/auth/change-password', data),
 };
 
 // ── Users ──
@@ -67,6 +70,8 @@ export const aiAPI = {
     recommend: (data) => api.post('/ai/recommend', data),
     engagement: (data) => api.post('/ai/engagement', data),
     health: () => api.get('/ai/health'),
+    // [D6] Real data endpoint
+    getMyData: () => api.get('/ai/my-data'),
 };
 
 // ── Classrooms ──
@@ -81,6 +86,42 @@ export const classroomsAPI = {
     startMeeting: (id) => api.post(`/classrooms/${id}/meeting/start`),
     endMeeting: (id) => api.post(`/classrooms/${id}/meeting/end`),
     getLive: () => api.get('/classrooms/live/now'),
+    uploadRecording: (id, formData) => api.post(`/classrooms/${id}/recording`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 300000, // 5 min timeout for large uploads
+    }),
+    getRecordings: (id) => api.get(`/classrooms/${id}/recordings`),
+    // [E2] Attendance history
+    getAttendance: (id) => api.get(`/attendance/classroom/${id}`),         // teacher: all sessions
+    getMyAttendance: (id) => api.get(`/attendance/classroom/${id}/me`),    // student: my records
+};
+
+// ── Attendance ──
+export const attendanceAPI = {
+    getActiveSessions: (classroomId) => api.get('/attendance/sessions', { params: { classroomId, status: 'active' } }),
+    checkin: (sessionId, data) => api.post(`/attendance/sessions/${sessionId}/checkin`, data),
+    faceVerifyBase64: (data) => api.post('/attendance/face/verify-base64', data),
+};
+
+// ── Assignments ── [D3]
+export const assignmentsAPI = {
+    getByClassroom: (classroomId) => api.get(`/assignments/classroom/${classroomId}`),
+    create: (formData) => api.post('/assignments', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+    update: (id, data) => api.put(`/assignments/${id}`, data),
+    delete: (id) => api.delete(`/assignments/${id}`),
+    submit: (id, formData) => api.post(`/assignments/${id}/submit`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+    grade: (id, studentId, data) => api.post(`/assignments/${id}/grade/${studentId}`, data),
+    getSubmissions: (id) => api.get(`/assignments/${id}/submissions`),
+};
+
+// ── Profile ── [C1]
+export const profileAPI = {
+    get: () => api.get('/users/profile/me'),
+    update: (data) => api.put('/users/profile/me', data),
 };
 
 export default api;

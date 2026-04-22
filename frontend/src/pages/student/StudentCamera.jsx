@@ -38,6 +38,14 @@ export default function StudentCamera() {
         setCameraOn(false);
     };
 
+    // [BUG FIX #17] Cleanup camera khi rời page
+    React.useEffect(() => {
+        return () => {
+            streamRef.current?.getTracks().forEach(t => t.stop());
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        };
+    }, []);
+
     const detectState = useCallback(async () => {
         if (!videoRef.current) return;
         const canvas = document.createElement('canvas');
@@ -68,8 +76,17 @@ export default function StudentCamera() {
     return (
         <>
             <div className="page-header">
-                <h1 className="page-title">Camera AI</h1>
-                <p className="page-subtitle">Theo dõi trạng thái học tập qua camera</p>
+                <h1 className="page-title">Camera AI — Tự luyện tập</h1>
+                <p className="page-subtitle">Kiểm tra mức độ tập trung của bạn khi học bài</p>
+            </div>
+
+            {/* [B6] notice class thay inline styles */}
+            <div className="notice notice-info">
+                <span className="notice-icon">💡</span>
+                <div>
+                    <strong>Chế độ tự luyện tập</strong> — Bật camera để AI theo dõi mức độ tập trung của bạn <em>ngoài giờ học</em>.
+                    Trong buổi học trực tuyến, hệ thống sẽ tự động theo dõi mà không cần bật trang này.
+                </div>
             </div>
 
             {/* Stats */}

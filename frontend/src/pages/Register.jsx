@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FiUser, FiMail, FiLock, FiBookOpen, FiAlertCircle, FiEye, FiEyeOff, FiChevronDown } from 'react-icons/fi';
+import { FiUser, FiMail, FiLock, FiBookOpen, FiAlertCircle, FiEye, FiEyeOff, FiInfo } from 'react-icons/fi';
 
 export default function Register() {
-    const [form, setForm] = useState({ name: '', email: '', password: '', role: 'student' });
+    const [form, setForm] = useState({ name: '', email: '', password: '' });
     const [showPass, setShowPass] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -15,18 +15,13 @@ export default function Register() {
         e.preventDefault();
         setError(''); setLoading(true);
         try {
-            const data = await register(form.name, form.email, form.password, form.role);
-            navigate(data.user.role === 'teacher' ? '/teacher'
-                : data.user.role === 'admin' ? '/admin' : '/student');
+            // [A7] Luôn đăng ký role='student' — giáo viên do admin tạo
+            await register(form.name, form.email, form.password, 'student');
+            navigate('/student');
         } catch (err) {
             setError(err.response?.data?.error || 'Đăng ký thất bại');
         } finally { setLoading(false); }
     };
-
-    const roleOptions = [
-        { value: 'student', label: 'Sinh viên' },
-        { value: 'teacher', label: 'Giáo viên' },
-    ];
 
     return (
         <div className="auth-container">
@@ -39,8 +34,19 @@ export default function Register() {
                     <span className="auth-title">EduAI Platform</span>
                 </div>
 
-                <h2 className="auth-heading">Tạo tài khoản</h2>
+                <h2 className="auth-heading">Tạo tài khoản sinh viên</h2>
                 <p className="auth-subheading">Bắt đầu hành trình học tập cùng AI</p>
+
+                {/* [A7] Policy notice */}
+                <div style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 10,
+                    background: 'var(--accent-light)', border: '1px solid var(--border-accent)',
+                    padding: '10px 14px', borderRadius: '10px', marginBottom: '20px',
+                    fontSize: '0.82em', color: 'var(--accent)'
+                }}>
+                    <FiInfo size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+                    <span>Đây là đăng ký tài khoản <strong>sinh viên</strong>. Tài khoản giáo viên do quản trị viên tạo.</span>
+                </div>
 
                 {error && (
                     <div style={{
@@ -105,55 +111,10 @@ export default function Register() {
                         </div>
                     </div>
 
-                    <div className="form-group">
-                        <label className="form-label">Vai trò</label>
-                        <div style={{ position: 'relative' }}>
-                            <select
-                                className="form-select"
-                                value={form.role}
-                                onChange={e => setForm({ ...form, role: e.target.value })}
-                                style={{ paddingRight: 36 }}
-                            >
-                                {roleOptions.map(r => (
-                                    <option key={r.value} value={r.value}>{r.label}</option>
-                                ))}
-                            </select>
-                            <FiChevronDown size={15} style={{
-                                position: 'absolute', right: 12, top: '50%',
-                                transform: 'translateY(-50%)', pointerEvents: 'none',
-                                color: 'var(--text-muted)'
-                            }} />
-                        </div>
-                    </div>
-
-                    {/* Role pills */}
-                    <div style={{ display: 'flex', gap: 8, marginBottom: 20, marginTop: -8 }}>
-                        {roleOptions.map(r => (
-                            <button
-                                key={r.value}
-                                type="button"
-                                onClick={() => setForm({ ...form, role: r.value })}
-                                style={{
-                                    flex: 1, padding: '10px 8px', borderRadius: 10,
-                                    border: `2px solid ${form.role === r.value ? 'var(--accent)' : 'var(--border)'}`,
-                                    background: form.role === r.value ? 'var(--accent-light)' : 'var(--bg-primary)',
-                                    color: form.role === r.value ? 'var(--accent)' : 'var(--text-secondary)',
-                                    cursor: 'pointer', fontWeight: 600, fontSize: '0.84em',
-                                    transition: 'all 0.2s ease'
-                                }}
-                            >
-                                {r.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    <button
-                        className="btn btn-primary btn-lg btn-block"
-                        disabled={loading}
-                    >
+                    <button className="btn btn-primary btn-lg btn-block" disabled={loading}>
                         {loading
                             ? <><span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> Đang tạo...</>
-                            : 'Tạo tài khoản'}
+                            : 'Tạo tài khoản sinh viên'}
                     </button>
                 </form>
 

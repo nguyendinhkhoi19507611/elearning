@@ -6,10 +6,18 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true, minlength: 6 },
     role: { type: String, enum: ['student', 'teacher', 'admin'], default: 'student' },
+    // [D1] Mã định danh thực tế
+    studentId: { type: String, unique: true, sparse: true, trim: true }, // VD: SV001234
+    teacherId: { type: String, unique: true, sparse: true, trim: true }, // VD: GV00012
+    department: { type: String, trim: true },   // Khoa / Bộ môn
+    phone: { type: String, trim: true },
     avatar: String,
     voiceRegistered: { type: Boolean, default: false },
     voiceId: String, // links to voice AI service
+    faceRegistered: { type: Boolean, default: false },
+    faceId: String, // links to face AI service
     preferredSubjects: [String],
+    subjects: [{ type: String, trim: true }],  // Môn dạy (cho giáo viên)
     enrolledCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
     // Learning stats
     stats: {

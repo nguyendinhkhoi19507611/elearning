@@ -4,6 +4,10 @@ const classroomSchema = new mongoose.Schema({
     name: { type: String, required: true, trim: true },
     subject: { type: String, required: true },
     description: { type: String, default: '' },
+    // [D1] Mã lớp, học kỳ, năm học
+    classCode: { type: String, unique: true, sparse: true, trim: true }, // VD: CS101-2024A
+    semester: { type: String, trim: true },     // VD: HK1 2024-2025
+    academicYear: { type: String, trim: true }, // VD: 2024-2025
     teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 
@@ -41,6 +45,18 @@ const classroomSchema = new mongoose.Schema({
 
     isActive: { type: Boolean, default: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+
+    // Recordings
+    recordings: [{
+        filename: String,
+        originalName: String,
+        size: Number,
+        duration: Number, // seconds
+        url: String,
+        uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        uploadedByName: String,
+        createdAt: { type: Date, default: Date.now },
+    }],
 }, { timestamps: true });
 
 // Index for schedule queries

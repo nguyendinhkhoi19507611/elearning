@@ -1,19 +1,23 @@
-// Teacher routes: /teacher, /teacher/monitoring, /teacher/courses, /teacher/create
+// Teacher routes: /teacher, /teacher/classrooms, /teacher/classroom/:id, /teacher/assignments, /teacher/profile
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import TeacherClassrooms from './teacher/TeacherClassrooms';
-import TeacherMonitoring from './teacher/TeacherMonitoring';
-import TeacherCourses from './teacher/TeacherCourses';
-import TeacherCreateCourse from './teacher/TeacherCreateCourse';
+import TeacherOverview from './teacher/TeacherOverview';
+import TeacherAssignment from './teacher/TeacherAssignment';
+import ClassroomDetail from './teacher/ClassroomDetail';
+import UserProfile from './UserProfile';
+import ChangePassword from './ChangePassword';
 
 export default function TeacherDashboard() {
     return (
         <div className="fade-in">
             <Routes>
-                <Route index element={<TeacherClassrooms />} />
-                <Route path="monitoring" element={<TeacherMonitoring />} />
-                <Route path="courses" element={<TeacherCourses />} />
-                <Route path="create" element={<TeacherCreateCourse />} />
+                <Route index element={<TeacherOverview />} />
+                <Route path="classrooms" element={<TeacherClassrooms />} />
+                <Route path="classroom/:id" element={<ClassroomDetail />} />
+                <Route path="assignments/:classroomId?" element={<TeacherAssignment />} />
+                <Route path="profile" element={<UserProfile />} />
+                <Route path="change-password" element={<ChangePassword />} />
                 <Route path="*" element={<Navigate to="/teacher" replace />} />
             </Routes>
         </div>

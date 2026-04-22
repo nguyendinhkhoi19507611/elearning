@@ -1,26 +1,28 @@
 import React from 'react';
-import { useNavigate, useLocation, NavLink } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { toggleSidebar } from '../store/uiSlice';
 import { useAuth } from '../context/AuthContext';
 import {
-    FiHome, FiVideo, FiBookOpen, FiCamera, FiMic,
-    FiActivity, FiBook, FiPlusCircle, FiUsers, FiCpu,
-    FiMenu, FiLogOut
+    FiHome, FiVideo, FiMic,
+    FiUsers, FiCpu, FiCalendar,
+    FiMenu, FiLogOut, FiUser, FiBookOpen, FiBook
 } from 'react-icons/fi';
 
+// [U4] Đồng bộ với Sidebar — 5 items cho student, thêm Điểm danh
 const mobileNavConfig = {
     student: [
         { icon: <FiHome size={20} />, label: 'Tổng quan', to: '/student' },
         { icon: <FiVideo size={20} />, label: 'Lớp học', to: '/student/classrooms' },
-        { icon: <FiCamera size={20} />, label: 'Camera', to: '/student/camera' },
-        { icon: <FiMic size={20} />, label: 'Giọng', to: '/student/voice' },
+        { icon: <FiCalendar size={20} />, label: 'Điểm danh', to: '/student/attendance' },
+        { icon: <FiBook size={20} />, label: 'Bài tập', to: '/student/assignments' },
+        { icon: <FiBookOpen size={20} />, label: 'Lộ trình', to: '/student/learning' },
     ],
     teacher: [
-        { icon: <FiVideo size={20} />, label: 'Lớp học', to: '/teacher' },
-        { icon: <FiActivity size={20} />, label: 'Giám sát', to: '/teacher/monitoring' },
-        { icon: <FiBook size={20} />, label: 'Khóa học', to: '/teacher/courses' },
-        { icon: <FiPlusCircle size={20} />, label: 'Tạo mới', to: '/teacher/create' },
+        { icon: <FiHome size={20} />, label: 'Tổng quan', to: '/teacher' },
+        { icon: <FiVideo size={20} />, label: 'Lớp học', to: '/teacher/classrooms' },
+        { icon: <FiBook size={20} />, label: 'Bài tập', to: '/teacher/assignments' },
+        { icon: <FiUser size={20} />, label: 'Hồ sơ', to: '/teacher/profile' },
     ],
     admin: [
         { icon: <FiHome size={20} />, label: 'Tổng quan', to: '/admin' },
@@ -41,9 +43,16 @@ export default function MobileBottomNav() {
 
     const items = mobileNavConfig[user.role] || mobileNavConfig.student;
 
+    const isActive = (to) => {
+        // Index route: exact match only
+        if (to === `/${user.role}`) return location.pathname === to;
+        return location.pathname.startsWith(to);
+    };
+
     return (
         <div className="mobile-bottomnav">
             <div className="mobile-bottomnav-inner">
+                {/* Menu button để mở sidebar (cho các mục không trong bottom nav) */}
                 <button
                     className="mobile-nav-btn"
                     onClick={() => dispatch(toggleSidebar())}
@@ -52,23 +61,23 @@ export default function MobileBottomNav() {
                     <FiMenu size={20} />
                     <span>Menu</span>
                 </button>
-                {items.map((item) => {
-                    const isActive = location.pathname === item.to ||
-                        (item.to.split('/').length > 2 && location.pathname.startsWith(item.to));
-                    return (
-                        <button
-                            key={item.to}
-                            className={`mobile-nav-btn${isActive ? ' active' : ''}`}
-                            onClick={() => navigate(item.to)}
-                        >
-                            {item.icon}
-                            <span>{item.label}</span>
-                        </button>
-                    );
-                })}
+
+                {items.map((item) => (
+                    <button
+                        key={item.to}
+                        className={`mobile-nav-btn${isActive(item.to) ? ' active' : ''}`}
+                        onClick={() => navigate(item.to)}
+                        aria-label={item.label}
+                    >
+                        {item.icon}
+                        <span>{item.label}</span>
+                    </button>
+                ))}
+
                 <button
                     className="mobile-nav-btn"
                     onClick={() => { logout(); navigate('/login'); }}
+                    aria-label="Đăng xuất"
                 >
                     <FiLogOut size={20} />
                     <span>Thoát</span>
