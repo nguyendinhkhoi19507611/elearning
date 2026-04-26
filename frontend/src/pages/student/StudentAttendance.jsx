@@ -9,9 +9,9 @@ import {
 } from 'react-icons/fi';
 
 const STATUS_MAP = {
-    present:   { label: 'Có mặt',    icon: <FiCheckCircle size={14} />, badge: 'badge-success' },
-    absent:    { label: 'Vắng mặt',  icon: <FiXCircle size={14} />,    badge: 'badge-danger'  },
-    late:      { label: 'Muộn',      icon: <FiClock size={14} />,      badge: 'badge-warning' },
+    present: { label: 'Có mặt', icon: <FiCheckCircle size={14} />, badge: 'badge-success' },
+    absent: { label: 'Vắng mặt', icon: <FiXCircle size={14} />, badge: 'badge-danger' },
+    late: { label: 'Muộn', icon: <FiClock size={14} />, badge: 'badge-warning' },
 };
 
 /* ── Face Verify Inline ── */
@@ -40,7 +40,7 @@ function FaceCheckin({ sessionId, user, onDone }) {
     useEffect(() => {
         if (videoRef.current && stream) {
             videoRef.current.srcObject = stream;
-            videoRef.current.play().catch(() => {});
+            videoRef.current.play().catch(() => { });
         }
     }, [stream, phase]);
 
@@ -298,7 +298,7 @@ export default function StudentAttendance() {
                         setCheckedIn(true);
                     }
                 }
-            }).catch(() => {}),
+            }).catch(() => { }),
         ]).finally(() => setLoadingRecs(false));
     }, [selectedId, user._id]);
 
@@ -306,14 +306,14 @@ export default function StudentAttendance() {
     useEffect(() => {
         if (!user) return;
         const token = localStorage.getItem('token');
-        const socket = io(window.location.origin, { path: '/socket.io', auth: { token } });
+        const socket = io(window.location.origin, { path: '/socket.io', auth: { token }, reconnectionAttempts: 3, reconnectionDelay: 2000 });
 
         socket.on('connect', () => {
             socket.emit('subscribeUser', { userId: user._id });
             classroomsAPI.getAll().then(r => {
                 const ids = (r.data || []).map(c => c._id);
                 if (ids.length > 0) socket.emit('subscribeClassrooms', { classroomIds: ids });
-            }).catch(() => {});
+            }).catch(() => { });
         });
 
         socket.on('attendanceStarted', (data) => {
@@ -465,7 +465,7 @@ export default function StudentAttendance() {
                                     onDone={(status) => {
                                         setCheckedIn(true);
                                         // Refresh history
-                                        classroomsAPI.getMyAttendance(selectedId).then(r => setRecords(r.data || [])).catch(() => {});
+                                        classroomsAPI.getMyAttendance(selectedId).then(r => setRecords(r.data || [])).catch(() => { });
                                     }}
                                 />
                             </div>

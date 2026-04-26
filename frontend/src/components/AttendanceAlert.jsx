@@ -168,7 +168,7 @@ export default function AttendanceAlert() {
 
         try {
             const res = await api.post('/attendance/face/verify-base64', {
-                image: imageData, threshold: 0.6,
+                image: imageData, threshold: 0.55,
             });
             setFaceResult(res.data);
 
