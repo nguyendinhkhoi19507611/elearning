@@ -6,7 +6,7 @@ import {
     FiActivity, FiBookOpen, FiVideo, FiAlertCircle,
     FiClock, FiChevronRight, FiRefreshCw, FiBarChart2,
     FiTrendingDown, FiCheckCircle, FiTarget, FiAward,
-    FiTrendingUp, FiBook,
+    FiTrendingUp, FiBook, FiAlertTriangle, FiLayers,
 } from 'react-icons/fi';
 
 const DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -25,10 +25,10 @@ const DIFFICULTY_VI = { easy: 'Cơ bản', medium: 'Trung bình', hard: 'Nâng c
 const diffVi = (d) => DIFFICULTY_VI[d] || d || '—';
 
 const ENGAGEMENT_MAP = {
-    high:    { label: 'Tốt',         color: 'var(--success)', emoji: '🟢', desc: 'Bạn đang học rất tích cực!' },
-    medium:  { label: 'Trung bình',  color: 'var(--info)',    emoji: '🟡', desc: 'Cần tăng cường thêm hoạt động học tập.' },
-    low:     { label: 'Thấp',        color: 'var(--warning)', emoji: '🟠', desc: 'Mức độ tương tác thấp, cần cải thiện.' },
-    at_risk: { label: 'Có nguy cơ',  color: 'var(--danger)',  emoji: '🔴', desc: 'Cảnh báo! Cần hỗ trợ và tăng cường học tập ngay.' },
+    high: { label: 'Tốt', color: 'var(--success)', emoji: '🟢', desc: 'Bạn đang học rất tích cực!' },
+    medium: { label: 'Trung bình', color: 'var(--info)', emoji: '🟡', desc: 'Cần tăng cường thêm hoạt động học tập.' },
+    low: { label: 'Thấp', color: 'var(--warning)', emoji: '🟠', desc: 'Mức độ tương tác thấp, cần cải thiện.' },
+    at_risk: { label: 'Có nguy cơ', color: 'var(--danger)', emoji: '🔴', desc: 'Cảnh báo! Cần hỗ trợ và tăng cường học tập ngay.' },
 };
 
 const ENGAGEMENT_KEY_VI = {
@@ -42,11 +42,11 @@ function MiniRing({ value, size = 44, stroke = 4, color = 'var(--accent)' }) {
     const pct = Math.max(0, Math.min(100, value));
     return (
         <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--border)" strokeWidth={stroke} />
-            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+            <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--border)" strokeWidth={stroke} />
+            <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke}
                 strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)} strokeLinecap="round"
                 style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
-            <text x={size/2} y={size/2} textAnchor="middle" dominantBaseline="central" fontSize="0.7em"
+            <text x={size / 2} y={size / 2} textAnchor="middle" dominantBaseline="central" fontSize="0.7em"
                 fontWeight="800" fill={color} style={{ transform: 'rotate(90deg)', transformOrigin: 'center' }}>
                 {Math.round(pct)}
             </text>
@@ -106,6 +106,11 @@ export default function StudentLearning() {
     const scoreLevel = getScoreLevel(avgScore);
     const attendanceRate = aiData?.meta?.attendanceRate ?? 0;
     const subjectScores = aiData?.meta?.subjectScores || {};
+    const completionRate = Math.round((aiData?.stats?.completion_rate ?? 0) * 100);
+    const totalCompleted = aiData?.stats?.total_completed ?? 0;
+    const totalLessons = aiData?.stats?.total_lessons ?? 0;
+    const totalNotSubmitted = aiData?.meta?.totalNotSubmitted ?? 0;
+    const recDifficulty = avgScore >= 80 ? 'hard' : avgScore >= 60 ? 'medium' : 'easy';
 
     return (
         <>
@@ -161,7 +166,7 @@ export default function StudentLearning() {
                             ? <span className="live-dot" style={{ flexShrink: 0 }}>LIVE</span>
                             : <span style={{ fontSize: '0.75em', color: 'var(--text-muted)', flexShrink: 0 }}>
                                 <FiClock size={11} style={{ marginRight: 4 }} />{c.schedule?.startTime || 'Chờ'}
-                              </span>
+                            </span>
                         }
                     </div>
                 ))}
@@ -218,6 +223,33 @@ export default function StudentLearning() {
                             <div style={{ fontSize: '0.75em', color: 'var(--text-muted)', marginBottom: 2, marginTop: 10 }}>Mức độ tương tác</div>
                             <div style={{ fontSize: '1.2em', fontWeight: 900, color: engInfo.color }}>{engInfo.emoji} {engInfo.label}</div>
                             <div style={{ fontSize: '0.68em', color: 'var(--text-muted)', marginTop: 2 }}>{engInfo.desc}</div>
+                        </div>
+
+                        <div className="stat-card">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                <MiniRing value={completionRate} color={completionRate >= 70 ? 'var(--success)' : completionRate >= 40 ? 'var(--warning)' : 'var(--danger)'} />
+                                <div>
+                                    <div style={{ fontSize: '0.75em', color: 'var(--text-muted)', marginBottom: 2 }}>Tiến độ hoàn thành</div>
+                                    <div style={{ fontSize: '1.4em', fontWeight: 900, color: completionRate >= 70 ? 'var(--success)' : completionRate >= 40 ? 'var(--warning)' : 'var(--danger)' }}>{completionRate}%</div>
+                                    <div style={{ fontSize: '0.68em', color: 'var(--text-muted)' }}>{totalCompleted}/{totalLessons} bài tập</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="stat-card">
+                            <div className="stat-icon" style={{ background: totalNotSubmitted > 0 ? 'rgba(239,68,68,0.1)' : 'var(--success-light)', color: totalNotSubmitted > 0 ? 'var(--danger)' : 'var(--success)' }}><FiAlertTriangle size={18} /></div>
+                            <div style={{ fontSize: '0.75em', color: 'var(--text-muted)', marginBottom: 2, marginTop: 10 }}>Bài chưa nộp</div>
+                            <div style={{ fontSize: '1.4em', fontWeight: 900, color: totalNotSubmitted > 0 ? 'var(--danger)' : 'var(--success)' }}>{totalNotSubmitted}</div>
+                            <div style={{ fontSize: '0.68em', color: 'var(--text-muted)', marginTop: 2 }}>{totalNotSubmitted > 0 ? '⚠️ Cần nộp sớm' : '✅ Đã nộp hết'}</div>
+                        </div>
+
+                        <div className="stat-card">
+                            <div className="stat-icon" style={{ background: recDifficulty === 'hard' ? 'rgba(124,58,237,0.1)' : recDifficulty === 'medium' ? 'var(--accent-light)' : 'var(--success-light)', color: recDifficulty === 'hard' ? '#7c3aed' : recDifficulty === 'medium' ? 'var(--info)' : 'var(--success)' }}><FiLayers size={18} /></div>
+                            <div style={{ fontSize: '0.75em', color: 'var(--text-muted)', marginBottom: 2, marginTop: 10 }}>Độ khó đề xuất</div>
+                            <div style={{ fontSize: '1.2em', fontWeight: 900, color: recDifficulty === 'hard' ? '#7c3aed' : recDifficulty === 'medium' ? 'var(--info)' : 'var(--success)' }}>
+                                {recDifficulty === 'hard' ? '🔥 Nâng cao' : recDifficulty === 'medium' ? '📘 Trung bình' : '📗 Cơ bản'}
+                            </div>
+                            <div style={{ fontSize: '0.68em', color: 'var(--text-muted)', marginTop: 2 }}>Dựa trên điểm TB: {avgScore}/100</div>
                         </div>
                     </div>
 
@@ -349,28 +381,28 @@ export default function StudentLearning() {
                                         {Object.entries(eng.probabilities || {})
                                             .sort((a, b) => b[1] - a[1])
                                             .map(([k, v]) => {
-                                            const label = ENGAGEMENT_KEY_VI[k] || k;
-                                            const pct = (v * 100).toFixed(1);
-                                            const isActive = k === eng.engagement;
-                                            const barColor = k === 'high' ? 'var(--success)' : k === 'low' ? 'var(--warning)' : k === 'at_risk' ? 'var(--danger)' : 'var(--info)';
-                                            return (
-                                                <div key={k} style={{
-                                                    marginBottom: 10, padding: '8px 12px', borderRadius: 8,
-                                                    background: isActive ? barColor + '0a' : 'transparent',
-                                                    border: isActive ? `1px solid ${barColor}33` : '1px solid transparent',
-                                                }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8em', marginBottom: 4 }}>
-                                                        <span style={{ fontWeight: isActive ? 700 : 500, color: isActive ? barColor : 'var(--text-secondary)' }}>
-                                                            {isActive && '● '}{label}
-                                                        </span>
-                                                        <span style={{ fontWeight: 700, color: isActive ? barColor : 'var(--text-primary)' }}>{pct}%</span>
+                                                const label = ENGAGEMENT_KEY_VI[k] || k;
+                                                const pct = (v * 100).toFixed(1);
+                                                const isActive = k === eng.engagement;
+                                                const barColor = k === 'high' ? 'var(--success)' : k === 'low' ? 'var(--warning)' : k === 'at_risk' ? 'var(--danger)' : 'var(--info)';
+                                                return (
+                                                    <div key={k} style={{
+                                                        marginBottom: 10, padding: '8px 12px', borderRadius: 8,
+                                                        background: isActive ? barColor + '0a' : 'transparent',
+                                                        border: isActive ? `1px solid ${barColor}33` : '1px solid transparent',
+                                                    }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8em', marginBottom: 4 }}>
+                                                            <span style={{ fontWeight: isActive ? 700 : 500, color: isActive ? barColor : 'var(--text-secondary)' }}>
+                                                                {isActive && '● '}{label}
+                                                            </span>
+                                                            <span style={{ fontWeight: 700, color: isActive ? barColor : 'var(--text-primary)' }}>{pct}%</span>
+                                                        </div>
+                                                        <div className="progress-track" style={{ height: 6 }}>
+                                                            <div className="progress-fill" style={{ width: `${pct}%`, background: barColor }} />
+                                                        </div>
                                                     </div>
-                                                    <div className="progress-track" style={{ height: 6 }}>
-                                                        <div className="progress-fill" style={{ width: `${pct}%`, background: barColor }} />
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                                );
+                                            })}
                                     </div>
                                 </div>
                             )}
