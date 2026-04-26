@@ -121,18 +121,29 @@ router.get('/:id', auth, async (req, res) => {
 router.post('/', auth, authorize('admin'), async (req, res) => {
     try {
         const { name, subject, description, teacherId, studentIds, schedule, settings, classCode, semester, academicYear } = req.body;
+        
+        console.log('📝 Received classroom create request:', { name, subject, teacherId, schedule });
+
+        // Validate schedule times
+        if (!schedule || !schedule.startTime || !schedule.endTime) {
+            console.log('❌ Validation failed: missing schedule times');
+            return res.status(400).json({ error: 'Lịch học phải có thời gian bắt đầu và kết thúc' });
+        }
 
         // Validate teacher
         const teacher = await User.findById(teacherId);
         if (!teacher || teacher.role !== 'teacher') {
-            return res.status(400).json({ error: 'Invalid teacher' });
+            console.log('❌ Validation failed: invalid teacher', teacherId);
+            return res.status(400).json({ error: 'Giáo viên không hợp lệ' });
         }
-
+        console.log(`✅ Teacher found: ${teacher.name}`);
+        
         // Validate students
         if (studentIds && studentIds.length > 0) {
             const students = await User.find({ _id: { $in: studentIds }, role: 'student' });
             if (students.length !== studentIds.length) {
-                return res.status(400).json({ error: 'Some students not found' });
+                console.log('❌ Validation failed: some students not found');
+                return res.status(400).json({ error: 'Một số sinh viên không được tìm thấy' });
             }
         }
 
@@ -148,12 +159,24 @@ router.post('/', auth, authorize('admin'), async (req, res) => {
             createdBy: req.user._id,
         });
 
+        console.log('💾 Saving classroom to DB...');
         await classroom.save();
+        console.log('✅ Classroom saved successfully:', classroom._id);
+        
         await classroom.populate('teacher', 'name email avatar');
         await classroom.populate('students', 'name email avatar');
         res.status(201).json(classroom);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('❌ Create classroom error:', {
+            message: err.message,
+            code: err.code,
+            stack: err.stack
+        });
+        // Handle duplicate classCode error
+        if (err.code === 11000) {
+            return res.status(400).json({ error: 'Mã lớp đã tồn tại' });
+        }
+        res.status(500).json({ error: err.message || 'Lỗi tạo lớp học' });
     }
 });
 

@@ -210,7 +210,12 @@ export default function AdminClassrooms() {
 
     const createClassroom = async () => {
         if (!form.name || !form.subject || !form.teacherId) return;
+        if (!form.startTime || !form.endTime) {
+            alert('Vui lòng nhập thời gian bắt đầu và kết thúc');
+            return;
+        }
         try {
+            console.log('Creating classroom with data:', form);
             await classroomsAPI.create({
                 name: form.name, subject: form.subject, description: form.description,
                 teacherId: form.teacherId, studentIds: form.studentIds,
@@ -222,8 +227,19 @@ export default function AdminClassrooms() {
                     endDate: form.endDate || undefined,
                 }
             });
-            setShowCreateModal(false); setForm(initForm()); loadData();
-        } catch (e) { console.error(e); }
+            alert('✅ Lớp học tạo thành công!');
+            setShowCreateModal(false); 
+            setForm(initForm()); 
+            loadData();
+        } catch (e) { 
+            const errorMsg = e.response?.data?.error || e.message || 'Lỗi không xác định';
+            console.error('❌ Error creating classroom:', {
+                status: e.response?.status,
+                message: errorMsg,
+                fullError: e
+            });
+            alert(`❌ Lỗi: ${errorMsg}`);
+        }
     };
 
     const handleDelete = async () => {
