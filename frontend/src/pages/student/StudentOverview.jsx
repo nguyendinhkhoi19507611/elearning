@@ -45,7 +45,7 @@ export default function StudentOverview() {
                 try {
                     const r = await assignmentsAPI.getByClassroom(cr._id);
                     (r.data || []).forEach(a => allA.push({ ...a, classroomName: cr.name }));
-                } catch (_) {}
+                } catch (_) { }
             }
             setAssignments(allA);
         } finally { setLoading(false); }
@@ -53,7 +53,7 @@ export default function StudentOverview() {
 
     const now = Date.now();
     const todayDow = new Date().getDay();
-    const todayClasses = classrooms.filter(cr => cr.schedule?.dayOfWeek?.includes(todayDow));
+    const todayClasses = classrooms.filter(cr => !cr.isExpired && cr.schedule?.dayOfWeek?.includes(todayDow));
     const upcoming = assignments
         .filter(a => { const d = new Date(a.dueDate).getTime(); return d > now && d - now < 7 * 86400000 && !a.mySubmission; })
         .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 4);
@@ -84,18 +84,18 @@ export default function StudentOverview() {
                 position: 'relative', overflow: 'hidden',
                 boxShadow: '0 8px 32px rgba(124, 58, 237, 0.25)',
             }}>
-                <div style={{ position:'absolute', top:-60, right:-40, width:220, height:220, borderRadius:'50%', background:'radial-gradient(circle,rgba(255,255,255,0.15) 0%,transparent 70%)', pointerEvents:'none' }} />
-                <div style={{ position:'absolute', bottom:-30, left:120, width:150, height:150, borderRadius:'50%', background:'radial-gradient(circle,rgba(255,255,255,0.1) 0%,transparent 70%)', pointerEvents:'none' }} />
+                <div style={{ position: 'absolute', top: -60, right: -40, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(255,255,255,0.15) 0%,transparent 70%)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', bottom: -30, left: 120, width: 150, height: 150, borderRadius: '50%', background: 'radial-gradient(circle,rgba(255,255,255,0.1) 0%,transparent 70%)', pointerEvents: 'none' }} />
 
-                <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16 }}>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
                     <div>
-                        <p style={{ fontSize:'0.77em', fontWeight:600, color:'rgba(255,255,255,0.7)', marginBottom:5, letterSpacing:0.3 }}>
+                        <p style={{ fontSize: '0.77em', fontWeight: 600, color: 'rgba(255,255,255,0.7)', marginBottom: 5, letterSpacing: 0.3 }}>
                             {greeting}, {dateStr}
                         </p>
-                        <h1 style={{ fontSize:'1.95em', fontWeight:900, letterSpacing:'-0.6px', color:'#fff', margin:0, lineHeight:1.15 }}>
-                            {firstName} <span style={{ fontSize:'0.7em', opacity:0.6 }}>👋</span>
+                        <h1 style={{ fontSize: '1.95em', fontWeight: 900, letterSpacing: '-0.6px', color: '#fff', margin: 0, lineHeight: 1.15 }}>
+                            {firstName} <span style={{ fontSize: '0.7em', opacity: 0.6 }}>👋</span>
                         </h1>
-                        <p style={{ color:'rgba(255,255,255,0.75)', marginTop:7, fontSize:'0.875em' }}>
+                        <p style={{ color: 'rgba(255,255,255,0.75)', marginTop: 7, fontSize: '0.875em' }}>
                             {overdue > 0
                                 ? `⚠️ Bạn có ${overdue} bài tập quá hạn cần nộp gấp`
                                 : upcoming.length > 0
@@ -103,14 +103,14 @@ export default function StudentOverview() {
                                     : '✅ Không có bài tập quá hạn — Tiếp tục phát huy!'}
                         </p>
                     </div>
-                    <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                         {todayClasses.find(c => c.meeting?.isLive) && (
-                            <button className="btn" style={{ background:'rgba(255,255,255,0.2)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', fontWeight:700, backdropFilter:'blur(8px)' }}
+                            <button className="btn" style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', fontWeight: 700, backdropFilter: 'blur(8px)' }}
                                 onClick={() => navigate(`/student/classroom/${todayClasses.find(c => c.meeting?.isLive)._id}`)}>
                                 <FiZap size={13} /> Vào lớp LIVE
                             </button>
                         )}
-                        <button className="btn btn-sm" style={{ background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.25)', backdropFilter:'blur(8px)' }}
+                        <button className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)' }}
                             onClick={() => navigate('/student/assignments')}>
                             <FiBook size={13} /> Bài tập của tôi
                         </button>
@@ -119,35 +119,35 @@ export default function StudentOverview() {
             </div>
 
             {/* ── Metrics ── */}
-            <div className="stats-grid" style={{ marginBottom:24 }}>
+            <div className="stats-grid" style={{ marginBottom: 24 }}>
                 {metrics.map((m, i) => (
                     <div key={i} onClick={() => navigate(m.to)} className="stat-card" style={{
-                        borderRadius:18, padding:'20px 22px', cursor:'pointer',
+                        borderRadius: 18, padding: '20px 22px', cursor: 'pointer',
                     }}>
-                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
-                            <div style={{ width:44, height:44, borderRadius:13, background:m.gradient, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', boxShadow:`0 4px 12px ${m.glow}` }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                            <div style={{ width: 44, height: 44, borderRadius: 13, background: m.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: `0 4px 12px ${m.glow}` }}>
                                 {m.icon}
                             </div>
-                            <FiArrowUpRight size={14} style={{ color:'var(--text-muted)', marginTop:2 }} />
+                            <FiArrowUpRight size={14} style={{ color: 'var(--text-muted)', marginTop: 2 }} />
                         </div>
-                        <div style={{ fontSize:'2.2em', fontWeight:900, letterSpacing:'-1.5px', lineHeight:1, color:'var(--text-primary)', marginBottom:4 }}>
-                            {loading ? <span className="skeleton" style={{ display:'inline-block', width:32, height:26, borderRadius:5 }} /> : m.value}
+                        <div style={{ fontSize: '2.2em', fontWeight: 900, letterSpacing: '-1.5px', lineHeight: 1, color: 'var(--text-primary)', marginBottom: 4 }}>
+                            {loading ? <span className="skeleton" style={{ display: 'inline-block', width: 32, height: 26, borderRadius: 5 }} /> : m.value}
                         </div>
-                        <div style={{ fontSize:'0.82em', fontWeight:600, color:'var(--text-muted)' }}>{m.label}</div>
+                        <div style={{ fontSize: '0.82em', fontWeight: 600, color: 'var(--text-muted)' }}>{m.label}</div>
                     </div>
                 ))}
             </div>
 
             {/* ── Content Grid ── */}
-            <div className="grid grid-2" style={{ gap:16, marginBottom:16, alignItems:'flex-start' }}>
+            <div className="grid grid-2" style={{ gap: 16, marginBottom: 16, alignItems: 'flex-start' }}>
 
                 {/* Lớp học hôm nay */}
-                <div className="card" style={{ borderRadius:18, display:'flex', flexDirection:'column', maxHeight:420 }}>
+                <div className="card" style={{ borderRadius: 18, display: 'flex', flexDirection: 'column', maxHeight: 420 }}>
                     <div className="card-header">
                         <div className="card-title">
                             <FiCalendar size={14} color="var(--accent)" /> Lớp học hôm nay
                             {todayClasses.length > 0 && (
-                                <span style={{ marginLeft:6, background:'var(--accent-light)', color:'var(--accent)', fontSize:'0.72em', padding:'2px 8px', borderRadius:99, fontWeight:700 }}>
+                                <span style={{ marginLeft: 6, background: 'var(--accent-light)', color: 'var(--accent)', fontSize: '0.72em', padding: '2px 8px', borderRadius: 99, fontWeight: 700 }}>
                                     {todayClasses.length}
                                 </span>
                             )}
@@ -155,17 +155,17 @@ export default function StudentOverview() {
                         <button className="card-action" onClick={() => navigate('/student/classrooms')}>Tất cả <FiChevronRight size={13} /></button>
                     </div>
 
-                    {loading && [1,2].map(k => (
-                        <div key={k} style={{ display:'flex', gap:10, padding:'8px 0' }}>
-                            <div className="skeleton" style={{ width:40, height:40, borderRadius:11, flexShrink:0 }} />
-                            <div style={{ flex:1 }}><div className="skeleton skeleton-text w-3/4" /><div className="skeleton skeleton-text w-1/2 sm" /></div>
+                    {loading && [1, 2].map(k => (
+                        <div key={k} style={{ display: 'flex', gap: 10, padding: '8px 0' }}>
+                            <div className="skeleton" style={{ width: 40, height: 40, borderRadius: 11, flexShrink: 0 }} />
+                            <div style={{ flex: 1 }}><div className="skeleton skeleton-text w-3/4" /><div className="skeleton skeleton-text w-1/2 sm" /></div>
                         </div>
                     ))}
 
                     {!loading && todayClasses.length === 0 && (
-                        <div style={{ padding:'28px 0', textAlign:'center' }}>
-                            <FiCheckCircle size={28} style={{ color:'var(--success)', opacity:0.4, marginBottom:10 }} />
-                            <div style={{ color:'var(--text-muted)', fontSize:'0.84em' }}>Không có lớp học hôm nay 🎉</div>
+                        <div style={{ padding: '28px 0', textAlign: 'center' }}>
+                            <FiCheckCircle size={28} style={{ color: 'var(--success)', opacity: 0.4, marginBottom: 10 }} />
+                            <div style={{ color: 'var(--text-muted)', fontSize: '0.84em' }}>Không có lớp học hôm nay 🎉</div>
                         </div>
                     )}
 
@@ -173,37 +173,37 @@ export default function StudentOverview() {
                         const live = cr.meeting?.isLive;
                         return (
                             <div key={cr._id} onClick={() => navigate(`/student/classroom/${cr._id}`)} style={{
-                                display:'flex', alignItems:'center', gap:12,
-                                padding:'11px 14px', borderRadius:12, marginBottom:8, cursor:'pointer',
+                                display: 'flex', alignItems: 'center', gap: 12,
+                                padding: '11px 14px', borderRadius: 12, marginBottom: 8, cursor: 'pointer',
                                 background: live ? 'var(--success-light)' : 'var(--bg-purple-soft)',
                                 border: `1px solid ${live ? 'rgba(16,185,129,0.2)' : 'var(--border)'}`,
-                                transition:'all 0.18s ease',
+                                transition: 'all 0.18s ease',
                             }}
                                 onMouseEnter={e => e.currentTarget.style.background = live ? 'rgba(16,185,129,0.15)' : 'var(--bg-hover)'}
                                 onMouseLeave={e => e.currentTarget.style.background = live ? 'var(--success-light)' : 'var(--bg-purple-soft)'}
                             >
-                                <div style={{ width:40, height:40, borderRadius:11, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background: live ? 'rgba(16,185,129,0.15)' : 'var(--accent-light)', color: live ? 'var(--success)' : 'var(--accent)', boxShadow: live ? '0 0 10px rgba(16,185,129,0.2)' : 'none' }}>
+                                <div style={{ width: 40, height: 40, borderRadius: 11, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: live ? 'rgba(16,185,129,0.15)' : 'var(--accent-light)', color: live ? 'var(--success)' : 'var(--accent)', boxShadow: live ? '0 0 10px rgba(16,185,129,0.2)' : 'none' }}>
                                     <FiVideo size={15} />
                                 </div>
-                                <div style={{ flex:1, minWidth:0 }}>
-                                    <div style={{ fontWeight:600, fontSize:'0.875em', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{cr.name}</div>
-                                    <div style={{ fontSize:'0.72em', color:'var(--text-muted)', display:'flex', alignItems:'center', gap:5, marginTop:2 }}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontWeight: 600, fontSize: '0.875em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cr.name}</div>
+                                    <div style={{ fontSize: '0.72em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
                                         <FiClock size={9} /> {cr.schedule?.startTime}–{cr.schedule?.endTime}
                                     </div>
                                 </div>
-                                {live && <span className="live-dot" style={{ fontSize:'0.65em', flexShrink:0 }}>LIVE</span>}
+                                {live && <span className="live-dot" style={{ fontSize: '0.65em', flexShrink: 0 }}>LIVE</span>}
                             </div>
                         );
                     })}
                 </div>
 
                 {/* Bài tập sắp hạn */}
-                <div className="card" style={{ borderRadius:18, display:'flex', flexDirection:'column', maxHeight:420 }}>
+                <div className="card" style={{ borderRadius: 18, display: 'flex', flexDirection: 'column', maxHeight: 420 }}>
                     <div className="card-header">
                         <div className="card-title">
                             <FiBook size={14} color="var(--warning)" /> Sắp đến hạn
                             {upcoming.length > 0 && (
-                                <span style={{ marginLeft:6, background:'rgba(245,158,11,0.12)', color:'var(--warning)', fontSize:'0.72em', padding:'2px 8px', borderRadius:99, fontWeight:700 }}>
+                                <span style={{ marginLeft: 6, background: 'rgba(245,158,11,0.12)', color: 'var(--warning)', fontSize: '0.72em', padding: '2px 8px', borderRadius: 99, fontWeight: 700 }}>
                                     {upcoming.length}
                                 </span>
                             )}
@@ -211,35 +211,35 @@ export default function StudentOverview() {
                         <button className="card-action" onClick={() => navigate('/student/assignments')}>Xem tất cả <FiChevronRight size={13} /></button>
                     </div>
 
-                    {loading && [1,2,3].map(k => (
-                        <div key={k} style={{ display:'flex', gap:10, padding:'8px 0' }}>
-                            <div style={{ flex:1 }}><div className="skeleton skeleton-text w-3/4" /><div className="skeleton skeleton-text w-1/2 sm" /></div>
-                            <div className="skeleton" style={{ width:55, height:22, borderRadius:99, flexShrink:0 }} />
+                    {loading && [1, 2, 3].map(k => (
+                        <div key={k} style={{ display: 'flex', gap: 10, padding: '8px 0' }}>
+                            <div style={{ flex: 1 }}><div className="skeleton skeleton-text w-3/4" /><div className="skeleton skeleton-text w-1/2 sm" /></div>
+                            <div className="skeleton" style={{ width: 55, height: 22, borderRadius: 99, flexShrink: 0 }} />
                         </div>
                     ))}
 
                     {!loading && upcoming.length === 0 && (
-                        <div style={{ padding:'28px 0', textAlign:'center' }}>
-                            <FiAward size={28} style={{ color:'var(--success)', opacity:0.4, marginBottom:10 }} />
-                            <div style={{ color:'var(--text-muted)', fontSize:'0.84em' }}>Không có bài tập nào sắp hạn ✅</div>
+                        <div style={{ padding: '28px 0', textAlign: 'center' }}>
+                            <FiAward size={28} style={{ color: 'var(--success)', opacity: 0.4, marginBottom: 10 }} />
+                            <div style={{ color: 'var(--text-muted)', fontSize: '0.84em' }}>Không có bài tập nào sắp hạn ✅</div>
                         </div>
                     )}
 
                     {!loading && upcoming.map(a => (
                         <div key={a._id} onClick={() => navigate('/student/assignments')} style={{
-                            display:'flex', alignItems:'center', gap:12,
-                            padding:'11px 14px', borderRadius:12, marginBottom:8, cursor:'pointer',
-                            background:'var(--bg-card)',
-                            border:'1px solid rgba(245,158,11,0.12)',
-                            borderLeft:'3px solid var(--warning)',
-                            transition:'all 0.18s ease',
+                            display: 'flex', alignItems: 'center', gap: 12,
+                            padding: '11px 14px', borderRadius: 12, marginBottom: 8, cursor: 'pointer',
+                            background: 'var(--bg-card)',
+                            border: '1px solid rgba(245,158,11,0.12)',
+                            borderLeft: '3px solid var(--warning)',
+                            transition: 'all 0.18s ease',
                         }}
-                            onMouseEnter={e => e.currentTarget.style.background='var(--warning-light)'}
-                            onMouseLeave={e => e.currentTarget.style.background='var(--bg-card)'}
+                            onMouseEnter={e => e.currentTarget.style.background = 'var(--warning-light)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-card)'}
                         >
-                            <div style={{ flex:1, minWidth:0 }}>
-                                <div style={{ fontWeight:600, fontSize:'0.875em', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{a.title}</div>
-                                <div style={{ fontSize:'0.72em', color:'var(--text-muted)', marginTop:2 }}>{a.classroomName}</div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: 600, fontSize: '0.875em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.title}</div>
+                                <div style={{ fontSize: '0.72em', color: 'var(--text-muted)', marginTop: 2 }}>{a.classroomName}</div>
                             </div>
                             <DueChip dueDate={a.dueDate} now={now} />
                         </div>
@@ -249,35 +249,35 @@ export default function StudentOverview() {
 
             {/* ── AI Learning Banner ── */}
             <div onClick={() => navigate('/student/learning')} style={{
-                cursor:'pointer', borderRadius:18, overflow:'hidden', position:'relative',
-                background:'var(--gradient-purple-deep)',
-                padding:'22px 28px',
-                display:'flex', alignItems:'center', justifyContent:'space-between', gap:20,
-                boxShadow:'0 4px 20px rgba(124,58,237,0.3)',
-                transition:'all 0.22s ease',
+                cursor: 'pointer', borderRadius: 18, overflow: 'hidden', position: 'relative',
+                background: 'var(--gradient-purple-deep)',
+                padding: '22px 28px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20,
+                boxShadow: '0 4px 20px rgba(124,58,237,0.3)',
+                transition: 'all 0.22s ease',
             }}
-                onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 12px 32px rgba(124,58,237,0.4)'; }}
-                onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='0 4px 20px rgba(124,58,237,0.3)'; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(124,58,237,0.4)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 4px 20px rgba(124,58,237,0.3)'; }}
             >
-                <div style={{ position:'absolute', top:-30, right:80, width:160, height:160, borderRadius:'50%', background:'radial-gradient(circle,rgba(255,255,255,0.08) 0%,transparent 70%)', pointerEvents:'none' }} />
-                <div style={{ position:'relative' }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
-                        <div style={{ width:32, height:32, borderRadius:9, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <div style={{ position: 'absolute', top: -30, right: 80, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle,rgba(255,255,255,0.08) 0%,transparent 70%)', pointerEvents: 'none' }} />
+                <div style={{ position: 'relative' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <FiZap size={15} color="#fff" />
                         </div>
-                        <span style={{ fontSize:'0.72em', fontWeight:700, letterSpacing:1.2, textTransform:'uppercase', color:'rgba(255,255,255,0.65)' }}>
+                        <span style={{ fontSize: '0.72em', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)' }}>
                             Lộ trình học AI cá nhân hóa
                         </span>
                     </div>
-                    <div style={{ fontWeight:800, color:'#fff', fontSize:'1.05em', marginBottom:4 }}>Xem lộ trình học cá nhân hóa</div>
-                    <div style={{ fontSize:'0.8em', color:'rgba(255,255,255,0.65)' }}>
+                    <div style={{ fontWeight: 800, color: '#fff', fontSize: '1.05em', marginBottom: 4 }}>Xem lộ trình học cá nhân hóa</div>
+                    <div style={{ fontSize: '0.8em', color: 'rgba(255,255,255,0.65)' }}>
                         Phân tích điểm yếu · Đề xuất bài học phù hợp · Đánh giá mức độ tiến bộ
                     </div>
                 </div>
-                <div style={{ flexShrink:0, display:'flex', alignItems:'center', gap:8 }}>
-                    <div style={{ display:'flex', gap:4 }}>
+                <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', gap: 4 }}>
                         {[FiTrendingUp, FiBook, FiAward].map((Icon, i) => (
-                            <div key={i} style={{ width:34, height:34, borderRadius:9, background:'rgba(255,255,255,0.12)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            <div key={i} style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <Icon size={14} color="rgba(255,255,255,0.8)" />
                             </div>
                         ))}

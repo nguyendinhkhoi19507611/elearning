@@ -30,6 +30,15 @@ function isScheduledNow(schedule) {
     const now = new Date();
     // Vietnam timezone: UTC+7
     const vnNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+
+    // Kiểm tra ngày bắt đầu/kết thúc khóa học
+    if (schedule.startDate && new Date(schedule.startDate) > vnNow) return false;
+    if (schedule.endDate) {
+        const endOfDay = new Date(schedule.endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        if (vnNow > endOfDay) return false;
+    }
+
     const todayDow = vnNow.getUTCDay(); // 0=Sun,1=Mon,...
     if (!schedule.dayOfWeek || !schedule.dayOfWeek.includes(todayDow)) return false;
     const [sh, sm] = schedule.startTime.split(':').map(Number);
@@ -38,6 +47,16 @@ function isScheduledNow(schedule) {
     const startMin = sh * 60 + sm;
     const endMin = eh * 60 + em;
     return nowMin >= startMin && nowMin < endMin;
+}
+
+// Kiểm tra lớp học đã hết hạn chưa (quá ngày kết thúc)
+function isClassroomExpired(schedule) {
+    if (!schedule || !schedule.endDate) return false;
+    const now = new Date();
+    const vnNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const endOfDay = new Date(schedule.endDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    return vnNow > endOfDay;
 }
 
 // ── GET /api/classrooms — List classrooms (filtered by role) ──
@@ -53,10 +72,11 @@ router.get('/', auth, async (req, res) => {
             .populate('createdBy', 'name')
             .sort('-createdAt');
 
-        // Auto-reset isLive nếu hết giờ
+        // Auto-reset isLive nếu hết giờ + đánh dấu lớp hết hạn
         const updated = classrooms.map(c => {
             const obj = c.toObject();
             obj.isScheduledNow = isScheduledNow(c.schedule);
+            obj.isExpired = isClassroomExpired(c.schedule);
             // Nếu đang LIVE mà hết giờ => tự tắt (chỉ trả về false, không save DB ở đây)
             if (obj.meeting?.isLive && !obj.isScheduledNow) {
                 obj.meeting.isLive = false;

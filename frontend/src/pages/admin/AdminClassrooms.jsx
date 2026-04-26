@@ -8,8 +8,8 @@ import {
 } from 'react-icons/fi';
 
 const DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-const WEEK_ORDER  = [1, 2, 3, 4, 5, 6, 0];
-const DAY_FULL    = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+const DAY_FULL = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
 const initForm = () => ({ name: '', subject: '', description: '', teacherId: '', dayOfWeek: [], startTime: '', endTime: '', studentIds: [], classCode: '', semester: '', startDate: '', endDate: '' });
 
 function getSession(t) {
@@ -23,82 +23,95 @@ function getMondayOf(date) {
     const d = new Date(date);
     const day = d.getDay();
     d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
-    d.setHours(0,0,0,0); return d;
+    d.setHours(0, 0, 0, 0); return d;
 }
-function fmt(date) { return date.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}); }
+function fmt(date) { return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }); }
 
 function WeekSchedule({ classrooms, classIndexMap }) {
     const navigate = useNavigate();
-    const [weekStart, setWeekStart] = useState(()=>getMondayOf(new Date()));
-    const weekDates = WEEK_ORDER.map(dow=>{ const d=new Date(weekStart); d.setDate(weekStart.getDate()+(dow===0?6:dow-1)); return {dow,date:d}; });
+    const [weekStart, setWeekStart] = useState(() => getMondayOf(new Date()));
+    const weekDates = WEEK_ORDER.map(dow => { const d = new Date(weekStart); d.setDate(weekStart.getDate() + (dow === 0 ? 6 : dow - 1)); return { dow, date: d }; });
     const todayStr = new Date().toDateString();
     const sessions = [
-        {key:'morning',label:'Sáng',time:'06:00 – 11:59'},
-        {key:'afternoon',label:'Chiều',time:'12:00 – 17:59'},
-        {key:'evening',label:'Tối',time:'18:00 – 21:59'},
+        { key: 'morning', label: 'Sáng', time: '06:00 – 11:59' },
+        { key: 'afternoon', label: 'Chiều', time: '12:00 – 17:59' },
+        { key: 'evening', label: 'Tối', time: '18:00 – 21:59' },
     ];
     const lookup = {};
-    classrooms.forEach(c=>{
-        (c.schedule?.dayOfWeek||[]).forEach(dow=>{
-            const sess=getSession(c.schedule?.startTime);
-            if(!lookup[dow])lookup[dow]={};
-            if(!lookup[dow][sess])lookup[dow][sess]=[];
+    classrooms.forEach(c => {
+        (c.schedule?.dayOfWeek || []).forEach(dow => {
+            const sess = getSession(c.schedule?.startTime);
+            if (!lookup[dow]) lookup[dow] = {};
+            if (!lookup[dow][sess]) lookup[dow][sess] = [];
             lookup[dow][sess].push(c);
         });
     });
-    const prevWeek=()=>{const d=new Date(weekStart);d.setDate(d.getDate()-7);setWeekStart(d);};
-    const nextWeek=()=>{const d=new Date(weekStart);d.setDate(d.getDate()+7);setWeekStart(d);};
-    const goToday =()=>setWeekStart(getMondayOf(new Date()));
+    // Helper: kiểm tra lớp có nằm trong khoảng ngày của cell không
+    const isClassActiveOnDate = (c, cellDate) => {
+        const d = new Date(cellDate); d.setHours(0, 0, 0, 0);
+        if (c.schedule?.startDate) {
+            const sd = new Date(c.schedule.startDate); sd.setHours(0, 0, 0, 0);
+            if (d < sd) return false;
+        }
+        if (c.schedule?.endDate) {
+            const ed = new Date(c.schedule.endDate); ed.setHours(23, 59, 59, 999);
+            if (d > ed) return false;
+        }
+        return true;
+    };
+    const prevWeek = () => { const d = new Date(weekStart); d.setDate(d.getDate() - 7); setWeekStart(d); };
+    const nextWeek = () => { const d = new Date(weekStart); d.setDate(d.getDate() + 7); setWeekStart(d); };
+    const goToday = () => setWeekStart(getMondayOf(new Date()));
     return (
         <div>
-            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:18,flexWrap:'wrap'}}>
-                <button onClick={goToday} className="btn btn-sm btn-outline" style={{fontWeight:700}}><FiCalendar size={13}/> Hôm nay</button>
-                <div style={{display:'flex',gap:4}}>
-                    <button onClick={prevWeek} className="btn btn-sm btn-outline" style={{padding:'7px 12px'}}><FiChevronLeft size={14}/></button>
-                    <button onClick={nextWeek} className="btn btn-sm btn-outline" style={{padding:'7px 12px'}}><FiChevronRight size={14}/></button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
+                <button onClick={goToday} className="btn btn-sm btn-outline" style={{ fontWeight: 700 }}><FiCalendar size={13} /> Hôm nay</button>
+                <div style={{ display: 'flex', gap: 4 }}>
+                    <button onClick={prevWeek} className="btn btn-sm btn-outline" style={{ padding: '7px 12px' }}><FiChevronLeft size={14} /></button>
+                    <button onClick={nextWeek} className="btn btn-sm btn-outline" style={{ padding: '7px 12px' }}><FiChevronRight size={14} /></button>
                 </div>
-                <span style={{fontSize:'0.85em',fontWeight:700,color:'var(--text-secondary)'}}>Tuần: {fmt(weekStart)} – {fmt(weekDates[6].date)} / {weekStart.getFullYear()}</span>
-                <span style={{marginLeft:'auto',fontSize:'0.8em',color:'var(--text-muted)'}}>{classrooms.length} lớp học</span>
+                <span style={{ fontSize: '0.85em', fontWeight: 700, color: 'var(--text-secondary)' }}>Tuần: {fmt(weekStart)} – {fmt(weekDates[6].date)} / {weekStart.getFullYear()}</span>
+                <span style={{ marginLeft: 'auto', fontSize: '0.8em', color: 'var(--text-muted)' }}>{classrooms.length} lớp học</span>
             </div>
-            <div style={{background:'var(--bg-card)',borderRadius:18,border:'1px solid var(--border)',overflow:'auto'}}>
-                <div style={{minWidth:700}}>
-                    <div style={{display:'grid',gridTemplateColumns:'80px repeat(7,1fr)',borderBottom:'1px solid var(--border)'}}>
-                        <div style={{padding:'12px 8px',fontSize:'0.7em',fontWeight:800,textTransform:'uppercase',letterSpacing:0.8,color:'var(--text-muted)',textAlign:'center',borderRight:'1px solid var(--border)'}}>Ca học</div>
-                        {weekDates.map(({dow,date},i)=>{
-                            const isToday=date.toDateString()===todayStr;
-                            return (<div key={i} style={{padding:'12px 8px',textAlign:'center',borderRight:i<6?'1px solid var(--border)':'none',background:isToday?'var(--accent-light)':'transparent'}}>
-                                <div style={{fontSize:'0.73em',fontWeight:800,color:isToday?'var(--accent)':'var(--text-secondary)'}}>{DAY_FULL[dow]}</div>
-                                <div style={{fontSize:'0.7em',marginTop:2,color:isToday?'var(--accent)':'var(--text-muted)',fontWeight:isToday?700:400}}>{fmt(date)}{isToday&&<span style={{marginLeft:4,display:'inline-block',width:5,height:5,borderRadius:'50%',background:'var(--accent)',verticalAlign:'middle'}}/>}</div>
+            <div style={{ background: 'var(--bg-card)', borderRadius: 18, border: '1px solid var(--border)', overflow: 'auto' }}>
+                <div style={{ minWidth: 700 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '80px repeat(7,1fr)', borderBottom: '1px solid var(--border)' }}>
+                        <div style={{ padding: '12px 8px', fontSize: '0.7em', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--text-muted)', textAlign: 'center', borderRight: '1px solid var(--border)' }}>Ca học</div>
+                        {weekDates.map(({ dow, date }, i) => {
+                            const isToday = date.toDateString() === todayStr;
+                            return (<div key={i} style={{ padding: '12px 8px', textAlign: 'center', borderRight: i < 6 ? '1px solid var(--border)' : 'none', background: isToday ? 'var(--accent-light)' : 'transparent' }}>
+                                <div style={{ fontSize: '0.73em', fontWeight: 800, color: isToday ? 'var(--accent)' : 'var(--text-secondary)' }}>{DAY_FULL[dow]}</div>
+                                <div style={{ fontSize: '0.7em', marginTop: 2, color: isToday ? 'var(--accent)' : 'var(--text-muted)', fontWeight: isToday ? 700 : 400 }}>{fmt(date)}{isToday && <span style={{ marginLeft: 4, display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: 'var(--accent)', verticalAlign: 'middle' }} />}</div>
                             </div>);
                         })}
                     </div>
-                    {sessions.map((sess,si)=>(
-                        <div key={sess.key} style={{display:'grid',gridTemplateColumns:'80px repeat(7,1fr)',borderBottom:si<2?'1px solid var(--border)':'none',minHeight:120}}>
-                            <div style={{padding:'14px 6px',borderRight:'1px solid var(--border)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'var(--bg-purple-soft)'}}>
-                                <div style={{fontSize:'0.78em',fontWeight:800,color:'var(--text-secondary)',marginBottom:3}}>{sess.label}</div>
-                                <div style={{fontSize:'0.6em',color:'var(--text-muted)',textAlign:'center',lineHeight:1.4}}>{sess.time}</div>
+                    {sessions.map((sess, si) => (
+                        <div key={sess.key} style={{ display: 'grid', gridTemplateColumns: '80px repeat(7,1fr)', borderBottom: si < 2 ? '1px solid var(--border)' : 'none', minHeight: 120 }}>
+                            <div style={{ padding: '14px 6px', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-purple-soft)' }}>
+                                <div style={{ fontSize: '0.78em', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: 3 }}>{sess.label}</div>
+                                <div style={{ fontSize: '0.6em', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4 }}>{sess.time}</div>
                             </div>
-                            {weekDates.map(({dow,date},ci)=>{
-                                const isToday=date.toDateString()===todayStr;
-                                const cellClasses=lookup[dow]?.[sess.key]||[];
+                            {weekDates.map(({ dow, date }, ci) => {
+                                const isToday = date.toDateString() === todayStr;
+                                const cellClasses = (lookup[dow]?.[sess.key] || []).filter(c => isClassActiveOnDate(c, date));
                                 return (
-                                    <div key={ci} style={{borderRight:ci<6?'1px solid var(--border)':'none',padding:6,background:isToday?'rgba(124,58,237,0.03)':'transparent',display:'flex',flexDirection:'column',gap:4,minHeight:120}}>
-                                        {cellClasses.map(c=>{
-                                            const live=c.meeting?.isLive;
-                                            const gi=classIndexMap[c._id]??0;
-                                            const accent=ACCENT_COLORS[gi%ACCENT_COLORS.length];
+                                    <div key={ci} style={{ borderRight: ci < 6 ? '1px solid var(--border)' : 'none', padding: 6, background: isToday ? 'rgba(124,58,237,0.03)' : 'transparent', display: 'flex', flexDirection: 'column', gap: 4, minHeight: 120 }}>
+                                        {cellClasses.map(c => {
+                                            const live = c.meeting?.isLive;
+                                            const gi = classIndexMap[c._id] ?? 0;
+                                            const accent = ACCENT_COLORS[gi % ACCENT_COLORS.length];
                                             return (
-                                                <div key={c._id} onClick={()=>navigate(`/admin/classroom/${c._id}`)}
-                                                    style={{borderRadius:8,padding:'7px 9px',background:live?'rgba(16,185,129,0.15)':`${accent}18`,border:`1px solid ${live?'rgba(16,185,129,0.35)':`${accent}33`}`,cursor:'pointer',transition:'all 0.15s',position:'relative',overflow:'hidden'}}
-                                                    onMouseEnter={e=>{e.currentTarget.style.background=live?'rgba(16,185,129,0.25)':`${accent}2e`;e.currentTarget.style.transform='scale(1.02)';}}
-                                                    onMouseLeave={e=>{e.currentTarget.style.background=live?'rgba(16,185,129,0.15)':`${accent}18`;e.currentTarget.style.transform='';}}>
-                                                    <div style={{position:'absolute',left:0,top:0,bottom:0,width:3,background:live?'var(--success)':accent,borderRadius:'0 2px 2px 0'}}/>
-                                                    <div style={{paddingLeft:6}}>
-                                                        {live&&<div style={{marginBottom:2}}><span className="live-dot" style={{fontSize:'0.55em'}}>LIVE</span></div>}
-                                                        <div style={{fontSize:'0.75em',fontWeight:700,lineHeight:1.2,marginBottom:2}}>{c.name}</div>
-                                                        <div style={{fontSize:'0.65em',color:live?'var(--success)':accent,fontWeight:600}}>{c.subject}</div>
-                                                        {c.teacher?.name&&<div style={{fontSize:'0.62em',color:'var(--text-muted)',marginTop:1}}>GV: {c.teacher.name}</div>}
-                                                        {c.schedule?.startTime&&<div style={{fontSize:'0.62em',color:'var(--text-muted)',marginTop:1}}>{c.schedule.startTime}–{c.schedule.endTime}</div>}
+                                                <div key={c._id} onClick={() => navigate(`/admin/classroom/${c._id}`)}
+                                                    style={{ borderRadius: 8, padding: '7px 9px', background: live ? 'rgba(16,185,129,0.15)' : `${accent}18`, border: `1px solid ${live ? 'rgba(16,185,129,0.35)' : `${accent}33`}`, cursor: 'pointer', transition: 'all 0.15s', position: 'relative', overflow: 'hidden' }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = live ? 'rgba(16,185,129,0.25)' : `${accent}2e`; e.currentTarget.style.transform = 'scale(1.02)'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = live ? 'rgba(16,185,129,0.15)' : `${accent}18`; e.currentTarget.style.transform = ''; }}>
+                                                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: live ? 'var(--success)' : accent, borderRadius: '0 2px 2px 0' }} />
+                                                    <div style={{ paddingLeft: 6 }}>
+                                                        {live && <div style={{ marginBottom: 2 }}><span className="live-dot" style={{ fontSize: '0.55em' }}>LIVE</span></div>}
+                                                        <div style={{ fontSize: '0.75em', fontWeight: 700, lineHeight: 1.2, marginBottom: 2 }}>{c.name}</div>
+                                                        <div style={{ fontSize: '0.65em', color: live ? 'var(--success)' : accent, fontWeight: 600 }}>{c.subject}</div>
+                                                        {c.teacher?.name && <div style={{ fontSize: '0.62em', color: 'var(--text-muted)', marginTop: 1 }}>GV: {c.teacher.name}</div>}
+                                                        {c.schedule?.startTime && <div style={{ fontSize: '0.62em', color: 'var(--text-muted)', marginTop: 1 }}>{c.schedule.startTime}–{c.schedule.endTime}</div>}
                                                     </div>
                                                 </div>
                                             );
@@ -110,11 +123,11 @@ function WeekSchedule({ classrooms, classIndexMap }) {
                     ))}
                 </div>
             </div>
-            <div style={{display:'flex',gap:14,marginTop:12,flexWrap:'wrap'}}>
-                {classrooms.filter(c=>c.schedule?.startTime).map(c=>{
-                    const gi=classIndexMap[c._id]??0;
-                    const accent=ACCENT_COLORS[gi%ACCENT_COLORS.length];
-                    return (<div key={c._id} style={{display:'flex',alignItems:'center',gap:6,fontSize:'0.75em'}}><div style={{width:10,height:10,borderRadius:3,background:accent,flexShrink:0}}/><span style={{color:'var(--text-secondary)',fontWeight:600}}>{c.name}</span></div>);
+            <div style={{ display: 'flex', gap: 14, marginTop: 12, flexWrap: 'wrap' }}>
+                {classrooms.filter(c => c.schedule?.startTime).map(c => {
+                    const gi = classIndexMap[c._id] ?? 0;
+                    const accent = ACCENT_COLORS[gi % ACCENT_COLORS.length];
+                    return (<div key={c._id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75em' }}><div style={{ width: 10, height: 10, borderRadius: 3, background: accent, flexShrink: 0 }} /><span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{c.name}</span></div>);
                 })}
             </div>
         </div>
@@ -240,39 +253,39 @@ export default function AdminClassrooms() {
 
     const liveCount = classrooms.filter(c => c.meeting?.isLive).length;
 
-    const classIndexMap = Object.fromEntries(classrooms.map((c,i)=>[c._id,i]));
-    const displayed = filterDay===null ? classrooms : classrooms.filter(c=>c.schedule?.dayOfWeek?.includes(filterDay));
+    const classIndexMap = Object.fromEntries(classrooms.map((c, i) => [c._id, i]));
+    const displayed = filterDay === null ? classrooms : classrooms.filter(c => c.schedule?.dayOfWeek?.includes(filterDay));
 
     return (
         <>
             {/* Header */}
-            <div style={{ display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:24,flexWrap:'wrap',gap:14 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 14 }}>
                 <div>
-                    <h1 style={{ fontSize:'1.6em',fontWeight:900,letterSpacing:'-0.5px',margin:0 }}>Quản lý lớp học</h1>
-                    <p style={{ color:'var(--text-muted)',fontSize:'0.875em',marginTop:5 }}>
+                    <h1 style={{ fontSize: '1.6em', fontWeight: 900, letterSpacing: '-0.5px', margin: 0 }}>Quản lý lớp học</h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875em', marginTop: 5 }}>
                         {classrooms.length} lớp học trong hệ thống
-                        {liveCount>0&&<span style={{ marginLeft:10,color:'var(--success)',fontWeight:700 }}>• {liveCount} đang LIVE</span>}
+                        {liveCount > 0 && <span style={{ marginLeft: 10, color: 'var(--success)', fontWeight: 700 }}>• {liveCount} đang LIVE</span>}
                     </p>
                 </div>
-                <div style={{ display:'flex',gap:10,alignItems:'center',flexWrap:'wrap' }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                     {/* View toggle */}
-                    <div style={{ display:'flex',gap:6,background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:12,padding:4 }}>
-                        {[{k:'schedule',icon:<FiCalendar size={13}/>,label:'Thời khóa biểu'},{k:'cards',icon:<FiGrid size={13}/>,label:'Thẻ lớp học'}].map(({k,icon,label})=>(
-                            <button key={k} onClick={()=>setView(k)} style={{ display:'flex',alignItems:'center',gap:6,padding:'7px 14px',borderRadius:8,border:'none',cursor:'pointer',fontWeight:600,fontSize:'0.8em',transition:'all 0.18s',background:view===k?'var(--accent)':'transparent',color:view===k?'#fff':'var(--text-muted)' }}>{icon}{label}</button>
+                    <div style={{ display: 'flex', gap: 6, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: 4 }}>
+                        {[{ k: 'schedule', icon: <FiCalendar size={13} />, label: 'Thời khóa biểu' }, { k: 'cards', icon: <FiGrid size={13} />, label: 'Thẻ lớp học' }].map(({ k, icon, label }) => (
+                            <button key={k} onClick={() => setView(k)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.8em', transition: 'all 0.18s', background: view === k ? 'var(--accent)' : 'transparent', color: view === k ? '#fff' : 'var(--text-muted)' }}>{icon}{label}</button>
                         ))}
                     </div>
-                    <button className="btn btn-primary" onClick={()=>setShowCreateModal(true)}>
-                        <FiPlus size={15}/> Tạo lớp học
+                    <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+                        <FiPlus size={15} /> Tạo lớp học
                     </button>
                 </div>
             </div>
 
             {/* Day filter (cards view) */}
-            {view==='cards'&&!loading&&classrooms.length>0&&(
-                <div style={{ display:'flex',gap:6,marginBottom:18,flexWrap:'wrap' }}>
-                    <button onClick={()=>setFilterDay(null)} style={{ padding:'6px 14px',borderRadius:99,border:'none',cursor:'pointer',fontWeight:600,fontSize:'0.78em',background:filterDay===null?'var(--accent)':'rgba(255,255,255,0.05)',color:filterDay===null?'#fff':'var(--text-muted)',transition:'all 0.15s' }}>Tất cả</button>
-                    {DAYS.map((d,i)=>(
-                        <button key={i} onClick={()=>setFilterDay(filterDay===i?null:i)} style={{ padding:'6px 12px',borderRadius:99,border:'none',cursor:'pointer',fontWeight:600,fontSize:'0.78em',background:filterDay===i?'var(--accent)':'rgba(255,255,255,0.05)',color:filterDay===i?'#fff':'var(--text-muted)',transition:'all 0.15s' }}>{d}</button>
+            {view === 'cards' && !loading && classrooms.length > 0 && (
+                <div style={{ display: 'flex', gap: 6, marginBottom: 18, flexWrap: 'wrap' }}>
+                    <button onClick={() => setFilterDay(null)} style={{ padding: '6px 14px', borderRadius: 99, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.78em', background: filterDay === null ? 'var(--accent)' : 'rgba(255,255,255,0.05)', color: filterDay === null ? '#fff' : 'var(--text-muted)', transition: 'all 0.15s' }}>Tất cả</button>
+                    {DAYS.map((d, i) => (
+                        <button key={i} onClick={() => setFilterDay(filterDay === i ? null : i)} style={{ padding: '6px 12px', borderRadius: 99, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.78em', background: filterDay === i ? 'var(--accent)' : 'rgba(255,255,255,0.05)', color: filterDay === i ? '#fff' : 'var(--text-muted)', transition: 'all 0.15s' }}>{d}</button>
                     ))}
                 </div>
             )}
@@ -280,7 +293,7 @@ export default function AdminClassrooms() {
             {/* Skeleton */}
             {loading && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 18 }}>
-                    {[1,2,3,4].map(k => (
+                    {[1, 2, 3, 4].map(k => (
                         <div key={k} style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid var(--border)' }}>
                             <div className="skeleton" style={{ height: 110 }} />
                             <div style={{ padding: '16px 20px' }}>
@@ -306,12 +319,12 @@ export default function AdminClassrooms() {
             )}
 
             {/* Schedule View */}
-            {!loading&&classrooms.length>0&&view==='schedule'&&(
+            {!loading && classrooms.length > 0 && view === 'schedule' && (
                 <WeekSchedule classrooms={classrooms} classIndexMap={classIndexMap} />
             )}
 
             {/* Cards */}
-            {!loading&&classrooms.length>0&&view==='cards'&&(
+            {!loading && classrooms.length > 0 && view === 'cards' && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 18 }}>
                     {classrooms.map((c, idx) => {
                         const live = c.meeting?.isLive;
@@ -510,12 +523,12 @@ export default function AdminClassrooms() {
                                     ? teachers.filter(t => (t.subjects || []).some(s => s.toLowerCase().includes(subjectLower)))
                                     : [];
                                 const list = filtered.length > 0 ? filtered : teachers;
-                                return list.map(t => <option key={t._id} value={t._id}>{t.name} ({t.email}){filtered.length > 0 && (t.subjects||[]).length > 0 ? ` — ${t.subjects.join(', ')}` : ''}</option>);
+                                return list.map(t => <option key={t._id} value={t._id}>{t.name} ({t.email}){filtered.length > 0 && (t.subjects || []).length > 0 ? ` — ${t.subjects.join(', ')}` : ''}</option>);
                             })()}
                         </select>
-                        {form.subject && teachers.some(t => (t.subjects||[]).length > 0) && (
+                        {form.subject && teachers.some(t => (t.subjects || []).length > 0) && (
                             <div style={{ fontSize: '0.72em', color: 'var(--text-muted)', marginTop: 4 }}>
-                                {teachers.filter(t => (t.subjects||[]).some(s => s.toLowerCase().includes(form.subject?.toLowerCase().trim()))).length > 0
+                                {teachers.filter(t => (t.subjects || []).some(s => s.toLowerCase().includes(form.subject?.toLowerCase().trim()))).length > 0
                                     ? `🟢 Lọc theo môn "${form.subject}"`
                                     : `⚠️ Không có GV theo môn "${form.subject}" — hiện tất cả`}
                             </div>
