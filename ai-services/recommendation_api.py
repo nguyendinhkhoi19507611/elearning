@@ -12,15 +12,15 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent))
 
 app = FastAPI(title="Recommendation Service", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
                    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 # ── Load Models & Data ──
-DATA_DIR = str(Path(__file__).parent.parent.parent / "data" / "learning")
-MODEL_DIR = str(Path(__file__).parent.parent.parent / "output" / "learning_models")
+DATA_DIR = str(Path(__file__).parent / "data" / "learning")
+MODEL_DIR = str(Path(__file__).parent / "output" / "learning_models")
 
 cf_model = None
 ba_model = None
