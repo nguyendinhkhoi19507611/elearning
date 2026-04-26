@@ -10,12 +10,12 @@ export default defineConfig({
         https: true,
         proxy: {
             '/api': {
-                target: 'http://192.168.88.151:5000',
+                target: 'http://192.168.1.189:5000',
                 changeOrigin: true,
                 secure: false,
             },
             '/uploads': {
-                target: 'http://192.168.88.151:5000',
+                target: 'http://192.168.1.189:5000',
                 changeOrigin: true,
                 secure: false,
             },
