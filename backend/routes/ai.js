@@ -274,6 +274,18 @@ router.get('/my-data', auth, async (req, res) => {
             const aiRes = await axios.post(`${process.env.AI_RECOMMEND_URL}/recommend`, payload, { timeout: 30000 });
             engagement = aiRes.data.engagement || null;
 
+            // Extract ML-powered predictions from AI service
+            var aiPredictedScores = aiRes.data.predicted_scores || null;
+            var aiStudyOrder = aiRes.data.optimal_study_order || null;
+            var aiSimilarStudents = aiRes.data.similar_students || null;
+            var aiDataSource = aiRes.data.data_source || 'unknown';
+            // Advanced ML analytics
+            var aiScoreTrajectory = aiRes.data.score_trajectory || null;
+            var aiStudyTimeEst = aiRes.data.study_time_estimates || null;
+            var aiRiskMap = aiRes.data.risk_map || null;
+            var aiSubjectClusters = aiRes.data.subject_clusters || null;
+            var aiSmartInsights = aiRes.data.smart_insights || null;
+
             // Update engagement level trong DB
             if (engagement?.engagement) {
                 await req.user.constructor.findByIdAndUpdate(userId, {
@@ -372,6 +384,19 @@ router.get('/my-data', auth, async (req, res) => {
                 gradedAssignments: scores.length,
                 subjectScores,
                 totalNotSubmitted,
+            },
+            // ML-powered AI predictions (requires trained model)
+            ai_predictions: {
+                predicted_scores: typeof aiPredictedScores !== 'undefined' ? aiPredictedScores : null,
+                study_order: typeof aiStudyOrder !== 'undefined' ? aiStudyOrder : null,
+                similar_students: typeof aiSimilarStudents !== 'undefined' ? aiSimilarStudents : null,
+                data_source: typeof aiDataSource !== 'undefined' ? aiDataSource : null,
+                // Advanced ML analytics
+                score_trajectory: typeof aiScoreTrajectory !== 'undefined' ? aiScoreTrajectory : null,
+                study_time_estimates: typeof aiStudyTimeEst !== 'undefined' ? aiStudyTimeEst : null,
+                risk_map: typeof aiRiskMap !== 'undefined' ? aiRiskMap : null,
+                subject_clusters: typeof aiSubjectClusters !== 'undefined' ? aiSubjectClusters : null,
+                smart_insights: typeof aiSmartInsights !== 'undefined' ? aiSmartInsights : null,
             }
         });
     } catch (err) {

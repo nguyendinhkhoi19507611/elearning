@@ -261,6 +261,314 @@ export default function StudentLearning() {
                         </div>
                     ))}
 
+                    {/* ── 🤖 AI Predictions (ML-powered) ── */}
+                    {(() => {
+                        const aiPred = aiData.ai_predictions;
+                        const predScores = aiPred?.predicted_scores || [];
+                        const studyOrder = aiPred?.study_order || [];
+                        const simStudents = aiPred?.similar_students;
+                        const isML = aiPred?.data_source === 'ml_model';
+
+                        if (!isML && !predScores.length) return (
+                            <div className="notice notice-warning" style={{ marginBottom: 16 }}>
+                                <FiAlertCircle size={14} />
+                                <span>AI model chưa được train. Gợi ý đang dùng chế độ heuristic (cơ bản).</span>
+                            </div>
+                        );
+
+                        return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 20 }}>
+                                {/* ── 🎯 Dự đoán điểm AI (CF Model) ── */}
+                                {predScores.length > 0 && (
+                                    <div className="card" style={{ border: '1px solid var(--accent)' }}>
+                                        <div className="card-header">
+                                            <div className="card-title"><FiTarget size={15} color="var(--accent)" /> Dự đoán điểm AI</div>
+                                            <span style={{ fontSize: '0.68em', color: 'var(--accent)', fontWeight: 600 }}>Collaborative Filtering Model</span>
+                                        </div>
+                                        <div style={{ fontSize: '0.73em', color: 'var(--text-muted)', marginBottom: 12 }}>
+                                            AI dự đoán điểm của bạn ở từng lớp học — dựa trên patterns của tất cả sinh viên
+                                        </div>
+                                        {predScores.slice(0, 8).map((p, i) => {
+                                            const barColor = p.predicted_score >= 70 ? 'var(--success)' : p.predicted_score >= 50 ? 'var(--warning)' : 'var(--danger)';
+                                            return (
+                                                <div key={i} style={{ marginBottom: 10 }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82em', marginBottom: 4 }}>
+                                                        <span style={{ fontWeight: 600 }}>{p.subject || p.name}</span>
+                                                        <span style={{ fontWeight: 700, color: barColor }}>
+                                                            {p.has_actual_score ? '✓ ' : '🤖 '}{p.predicted_score}/100
+                                                        </span>
+                                                    </div>
+                                                    <div className="progress-track" style={{ height: 7 }}>
+                                                        <div className="progress-fill" style={{ width: `${p.predicted_score}%`, background: barColor }} />
+                                                    </div>
+                                                    <div style={{ fontSize: '0.68em', color: 'var(--text-muted)', marginTop: 2 }}>
+                                                        {p.has_actual_score ? 'Đã có điểm thực tế' : `Dự đoán • ${p.difficulty}`}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                <div className="grid grid-2">
+                                    {/* ── 📊 Thứ tự học tối ưu (Embedding Similarity) ── */}
+                                    {studyOrder.length > 0 && (
+                                        <div className="card" style={{ border: '1px solid #7c3aed' }}>
+                                            <div className="card-header">
+                                                <div className="card-title"><FiLayers size={15} color="#7c3aed" /> Thứ tự học tối ưu</div>
+                                                <span style={{ fontSize: '0.68em', color: '#7c3aed', fontWeight: 600 }}>Embedding Analysis</span>
+                                            </div>
+                                            <div style={{ fontSize: '0.73em', color: 'var(--text-muted)', marginBottom: 12 }}>
+                                                Thứ tự được tính riêng cho BẠN — dựa trên cosine similarity giữa student & lesson embeddings
+                                            </div>
+                                            {studyOrder.slice(0, 6).map((item, i) => (
+                                                <div key={i} style={{
+                                                    display: 'flex', alignItems: 'center', gap: 10,
+                                                    padding: '8px 10px', marginBottom: 6,
+                                                    background: i === 0 ? 'rgba(124,58,237,0.08)' : 'transparent',
+                                                    borderRadius: 8, border: i === 0 ? '1px solid rgba(124,58,237,0.2)' : '1px solid var(--border)',
+                                                }}>
+                                                    <span style={{
+                                                        width: 26, height: 26, borderRadius: 8,
+                                                        background: i === 0 ? '#7c3aed' : 'var(--bg-secondary)',
+                                                        color: i === 0 ? '#fff' : 'var(--text-muted)',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        fontWeight: 800, fontSize: '0.78em', flexShrink: 0,
+                                                    }}>{item.rank}</span>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontWeight: 600, fontSize: '0.82em' }}>{item.subject || item.name}</div>
+                                                        <div style={{ fontSize: '0.7em', color: 'var(--text-muted)' }}>
+                                                            Affinity: {(item.affinity * 100).toFixed(0)}% • Dự đoán: {item.predicted_score}/100
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ fontSize: '0.68em', color: '#7c3aed', fontWeight: 600, textAlign: 'right', maxWidth: 120 }}>
+                                                        {item.reason}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* ── 👥 So sánh nhóm tương tự (Student Embedding) ── */}
+                                    {simStudents && simStudents.peer_count > 0 && (
+                                        <div className="card" style={{ border: '1px solid var(--info)' }}>
+                                            <div className="card-header">
+                                                <div className="card-title"><FiAward size={15} color="var(--info)" /> So sánh với nhóm tương tự</div>
+                                                <span style={{ fontSize: '0.68em', color: 'var(--info)', fontWeight: 600 }}>Student Embeddings</span>
+                                            </div>
+                                            <div style={{ fontSize: '0.73em', color: 'var(--text-muted)', marginBottom: 16 }}>
+                                                AI tìm {simStudents.peer_count} sinh viên có profile giống bạn nhất (similarity: {(simStudents.avg_similarity * 100).toFixed(0)}%)
+                                            </div>
+
+                                            <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+                                                <div style={{ flex: 1, textAlign: 'center', padding: '12px 8px', background: 'var(--bg-secondary)', borderRadius: 10 }}>
+                                                    <div style={{ fontSize: '0.72em', color: 'var(--text-muted)', marginBottom: 4 }}>Điểm TB của bạn</div>
+                                                    <div style={{ fontSize: '1.6em', fontWeight: 900, color: 'var(--accent)' }}>{simStudents.your_avg_score}</div>
+                                                </div>
+                                                <div style={{ flex: 1, textAlign: 'center', padding: '12px 8px', background: 'var(--bg-secondary)', borderRadius: 10 }}>
+                                                    <div style={{ fontSize: '0.72em', color: 'var(--text-muted)', marginBottom: 4 }}>TB nhóm tương tự</div>
+                                                    <div style={{ fontSize: '1.6em', fontWeight: 900, color: 'var(--info)' }}>{simStudents.peer_avg_score}</div>
+                                                </div>
+                                                <div style={{ flex: 1, textAlign: 'center', padding: '12px 8px', background: 'var(--bg-secondary)', borderRadius: 10 }}>
+                                                    <div style={{ fontSize: '0.72em', color: 'var(--text-muted)', marginBottom: 4 }}>Chênh lệch</div>
+                                                    <div style={{
+                                                        fontSize: '1.6em', fontWeight: 900,
+                                                        color: simStudents.score_diff > 0 ? 'var(--success)' : simStudents.score_diff < 0 ? 'var(--danger)' : 'var(--text-muted)'
+                                                    }}>
+                                                        {simStudents.score_diff > 0 ? '+' : ''}{simStudents.score_diff}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div style={{
+                                                padding: '10px 14px', borderRadius: 8,
+                                                background: simStudents.comparison === 'above' ? 'rgba(34,197,94,0.08)' : simStudents.comparison === 'below' ? 'rgba(239,68,68,0.08)' : 'var(--bg-secondary)',
+                                                border: `1px solid ${simStudents.comparison === 'above' ? 'var(--success)' : simStudents.comparison === 'below' ? 'var(--danger)' : 'var(--border)'}`,
+                                                fontSize: '0.82em', fontWeight: 600,
+                                                color: simStudents.comparison === 'above' ? 'var(--success)' : simStudents.comparison === 'below' ? 'var(--danger)' : 'var(--text-secondary)',
+                                            }}>
+                                                {simStudents.comparison === 'above' ? '🏆' : simStudents.comparison === 'below' ? '📈' : '🤝'} {simStudents.insight}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })()}
+
+                    {/* ── ADVANCED ML ANALYTICS ── */}
+                    {(() => {
+                        const aiPred = aiData.ai_predictions;
+                        if (!aiPred || aiPred.data_source !== 'ml_model') return null;
+
+                        const trajectory = aiPred.score_trajectory;
+                        const riskMap = aiPred.risk_map || [];
+                        const studyTime = aiPred.study_time_estimates || [];
+                        const clusters = aiPred.subject_clusters || [];
+                        const insights = aiPred.smart_insights || [];
+
+                        return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 20 }}>
+                                {/* ── 💡 Smart Insights ── */}
+                                {insights.length > 0 && (
+                                    <div className="card" style={{ border: '1px solid #f59e0b', background: 'linear-gradient(135deg, rgba(245,158,11,0.03), transparent)' }}>
+                                        <div className="card-header">
+                                            <div className="card-title"><span style={{ fontSize: '1.1em' }}>💡</span> AI Insights</div>
+                                            <span style={{ fontSize: '0.68em', color: '#f59e0b', fontWeight: 600 }}>Tổng hợp từ tất cả models</span>
+                                        </div>
+                                        {insights.map((ins, i) => (
+                                            <div key={i} style={{
+                                                display: 'flex', alignItems: 'flex-start', gap: 10,
+                                                padding: '10px 12px', marginBottom: 6, borderRadius: 8,
+                                                background: ins.type === 'positive' ? 'rgba(34,197,94,0.06)' :
+                                                    ins.type === 'warning' || ins.type === 'negative' ? 'rgba(239,68,68,0.06)' : 'var(--bg-secondary)',
+                                                border: `1px solid ${ins.type === 'positive' ? 'rgba(34,197,94,0.15)' :
+                                                    ins.type === 'warning' || ins.type === 'negative' ? 'rgba(239,68,68,0.15)' : 'var(--border)'}`,
+                                            }}>
+                                                <span style={{ fontSize: '1.1em', flexShrink: 0 }}>{ins.icon}</span>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontSize: '0.82em', fontWeight: 600, color: 'var(--text-primary)' }}>{ins.text}</div>
+                                                    <div style={{ fontSize: '0.65em', color: 'var(--text-muted)', marginTop: 3 }}>📐 {ins.source}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="grid grid-2">
+                                    {/* ── 📈 Score Trajectory ── */}
+                                    {trajectory && trajectory.trend !== 'insufficient_data' && trajectory.trend !== 'error' && (
+                                        <div className="card" style={{ border: `1px solid ${trajectory.trend === 'improving' ? 'var(--success)' : trajectory.trend === 'declining' ? 'var(--danger)' : 'var(--border)'}` }}>
+                                            <div className="card-header">
+                                                <div className="card-title"><FiTrendingUp size={15} color={trajectory.trend === 'improving' ? 'var(--success)' : trajectory.trend === 'declining' ? 'var(--danger)' : 'var(--info)'} /> Xu hướng điểm</div>
+                                                <span style={{ fontSize: '0.68em', color: 'var(--text-muted)', fontWeight: 600 }}>Linear Regression (R²={trajectory.confidence})</span>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+                                                <div style={{ flex: 1, textAlign: 'center', padding: '10px 6px', background: 'var(--bg-secondary)', borderRadius: 10 }}>
+                                                    <div style={{ fontSize: '0.68em', color: 'var(--text-muted)' }}>Xu hướng</div>
+                                                    <div style={{ fontSize: '1.3em', fontWeight: 900, color: trajectory.trend === 'improving' ? 'var(--success)' : trajectory.trend === 'declining' ? 'var(--danger)' : 'var(--info)' }}>
+                                                        {trajectory.trend === 'improving' ? '📈 Tăng' : trajectory.trend === 'declining' ? '📉 Giảm' : '➡️ Ổn định'}
+                                                    </div>
+                                                </div>
+                                                <div style={{ flex: 1, textAlign: 'center', padding: '10px 6px', background: 'var(--bg-secondary)', borderRadius: 10 }}>
+                                                    <div style={{ fontSize: '0.68em', color: 'var(--text-muted)' }}>Tốc độ</div>
+                                                    <div style={{ fontSize: '1.3em', fontWeight: 900 }}>{trajectory.slope > 0 ? '+' : ''}{trajectory.slope}/bài</div>
+                                                </div>
+                                                <div style={{ flex: 1, textAlign: 'center', padding: '10px 6px', background: 'var(--bg-secondary)', borderRadius: 10 }}>
+                                                    <div style={{ fontSize: '0.68em', color: 'var(--text-muted)' }}>Dự đoán tiếp</div>
+                                                    <div style={{ fontSize: '1.3em', fontWeight: 900, color: 'var(--accent)' }}>{trajectory.predicted_next}/100</div>
+                                                </div>
+                                            </div>
+                                            {Object.entries(trajectory.subjects || {}).map(([subj, t]) => (
+                                                <div key={subj} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', fontSize: '0.78em' }}>
+                                                    <span>{subj}</span>
+                                                    <span style={{ fontWeight: 700, color: t.trend === 'improving' ? 'var(--success)' : t.trend === 'declining' ? 'var(--danger)' : 'var(--text-muted)' }}>
+                                                        {t.trend === 'improving' ? '↑' : t.trend === 'declining' ? '↓' : '→'} {t.slope > 0 ? '+' : ''}{t.slope}/bài → {t.predicted_next}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* ── 🔥 Risk Heatmap ── */}
+                                    {riskMap.length > 0 && (
+                                        <div className="card" style={{ border: '1px solid var(--danger)' }}>
+                                            <div className="card-header">
+                                                <div className="card-title"><FiAlertTriangle size={15} color="var(--danger)" /> Bản đồ rủi ro</div>
+                                                <span style={{ fontSize: '0.68em', color: 'var(--danger)', fontWeight: 600 }}>4-Factor Analysis</span>
+                                            </div>
+                                            <div style={{ fontSize: '0.73em', color: 'var(--text-muted)', marginBottom: 10 }}>
+                                                Kết hợp: Dự đoán điểm × Xu hướng × Điểm thực × Độ ổn định
+                                            </div>
+                                            {riskMap.slice(0, 6).map((r, i) => {
+                                                const rColor = r.risk_level === 'high' ? 'var(--danger)' : r.risk_level === 'medium' ? 'var(--warning)' : 'var(--success)';
+                                                return (
+                                                    <div key={i} style={{ marginBottom: 8 }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8em', marginBottom: 3 }}>
+                                                            <span style={{ fontWeight: 600 }}>
+                                                                {r.risk_level === 'high' ? '🔴' : r.risk_level === 'medium' ? '🟡' : '🟢'} {r.subject}
+                                                            </span>
+                                                            <span style={{ fontWeight: 800, color: rColor }}>{r.risk_pct}%</span>
+                                                        </div>
+                                                        <div className="progress-track" style={{ height: 6 }}>
+                                                            <div className="progress-fill" style={{ width: `${r.risk_pct}%`, background: rColor }} />
+                                                        </div>
+                                                        <div style={{ fontSize: '0.65em', color: 'var(--text-muted)', marginTop: 2 }}>
+                                                            Dự đoán: {r.predicted_score} • {r.trend === 'declining' ? '↓ Giảm' : r.trend === 'improving' ? '↑ Tăng' : '→ Ổn định'}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-2">
+                                    {/* ── ⏱️ Study Time Estimates ── */}
+                                    {studyTime.length > 0 && (
+                                        <div className="card" style={{ border: '1px solid var(--info)' }}>
+                                            <div className="card-header">
+                                                <div className="card-title"><FiClock size={15} color="var(--info)" /> Thời gian cần học</div>
+                                                <span style={{ fontSize: '0.68em', color: 'var(--info)', fontWeight: 600 }}>Peer-based Estimation</span>
+                                            </div>
+                                            <div style={{ fontSize: '0.73em', color: 'var(--text-muted)', marginBottom: 10 }}>
+                                                Ước tính giờ học cần thiết — dựa trên data của sinh viên tương tự
+                                            </div>
+                                            {studyTime.slice(0, 6).map((st, i) => (
+                                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontWeight: 600, fontSize: '0.82em' }}>{st.subject}</div>
+                                                        <div style={{ fontSize: '0.7em', color: 'var(--text-muted)' }}>
+                                                            {st.current_score} → {st.target_score} ({st.peer_based ? 'peer data' : 'ước tính'})
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ textAlign: 'right' }}>
+                                                        <div style={{ fontWeight: 800, fontSize: '1em', color: 'var(--info)' }}>~{st.estimated_hours}h</div>
+                                                        <div style={{ fontSize: '0.65em', color: 'var(--text-muted)' }}>+{st.gap} điểm</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* ── 🔗 Subject Clusters ── */}
+                                    {clusters.length > 0 && (
+                                        <div className="card" style={{ border: '1px solid #7c3aed' }}>
+                                            <div className="card-header">
+                                                <div className="card-title"><FiLayers size={15} color="#7c3aed" /> Nhóm môn học</div>
+                                                <span style={{ fontSize: '0.68em', color: '#7c3aed', fontWeight: 600 }}>Embedding Clustering</span>
+                                            </div>
+                                            <div style={{ fontSize: '0.73em', color: 'var(--text-muted)', marginBottom: 10 }}>
+                                                Các môn được nhóm theo embedding similarity — mạnh/yếu từng nhóm
+                                            </div>
+                                            {clusters.map((cl, i) => (
+                                                <div key={i} style={{
+                                                    padding: '10px 12px', marginBottom: 8, borderRadius: 10,
+                                                    background: cl.strength === 'strong' ? 'rgba(34,197,94,0.06)' : cl.strength === 'weak' ? 'rgba(239,68,68,0.06)' : 'var(--bg-secondary)',
+                                                    border: `1px solid ${cl.strength === 'strong' ? 'rgba(34,197,94,0.2)' : cl.strength === 'weak' ? 'rgba(239,68,68,0.2)' : 'var(--border)'}`,
+                                                }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                                        <span style={{
+                                                            fontSize: '0.72em', fontWeight: 700, padding: '2px 8px', borderRadius: 6,
+                                                            background: cl.strength === 'strong' ? 'var(--success)' : cl.strength === 'weak' ? 'var(--danger)' : 'var(--info)',
+                                                            color: '#fff',
+                                                        }}>
+                                                            {cl.strength === 'strong' ? '💪 Mạnh' : cl.strength === 'weak' ? '📚 Yếu' : '📘 TB'}
+                                                        </span>
+                                                        <span style={{ fontSize: '0.75em', fontWeight: 700 }}>TB: {cl.avg_score}/100</span>
+                                                    </div>
+                                                    <div style={{ fontSize: '0.8em', color: 'var(--text-secondary)' }}>
+                                                        {cl.subjects.join(' • ')}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })()}
+
                     <div className="grid grid-2">
                         {/* ── Điểm theo lớp học thực tế ── */}
                         <div className="card">
