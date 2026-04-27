@@ -31,7 +31,7 @@ router.get('/profile/me', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user._id)
             .select('-password');
-            // [BUG-14 FIX] Bỏ populate('enrolledCourses') — field legacy không dùng trong hệ thống classroom
+        // [BUG-14 FIX] Bỏ populate('enrolledCourses') — field legacy không dùng trong hệ thống classroom
         res.json({ user });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -72,7 +72,7 @@ router.get('/', auth, authorize('admin'), async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
     try {
         const user = await User.findById(req.params.id).select('-password');
-            // [BUG-14 FIX] Bỏ populate('enrolledCourses') — field legacy không dùng
+        // [BUG-14 FIX] Bỏ populate('enrolledCourses') — field legacy không dùng
         if (!user) return res.status(404).json({ error: 'User not found' });
         res.json({ user });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -91,9 +91,10 @@ router.put('/:id', auth, async (req, res) => {
         if (req.user.role === 'admin') {
             if (req.body.role) updates.role = req.body.role;
             if (req.body.isActive !== undefined) updates.isActive = req.body.isActive;
-            // Admin có thể set studentId/teacherId
+            // Admin có thể set studentId/teacherId/subjects
             if (req.body.studentId !== undefined) updates.studentId = req.body.studentId || undefined;
             if (req.body.teacherId !== undefined) updates.teacherId = req.body.teacherId || undefined;
+            if (req.body.subjects !== undefined) updates.subjects = req.body.subjects;
         }
 
         const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select('-password');
