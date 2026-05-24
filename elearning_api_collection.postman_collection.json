@@ -1,0 +1,1539 @@
+{
+  "info": {
+    "_postman_id": "d97f9624-a5a4-47e0-a895-b8bc0a2e680a",
+    "name": "E-Learning API Collection",
+    "description": "Bộ test toàn bộ API của hệ thống E-Learning.\n\n**Setup:**\n1. Chạy request `Login (Admin)` trước để lấy token\n2. Token sẽ tự động lưu vào biến `token`\n3. Các request khác sẽ dùng token này\n\n**Variables:**\n- `baseUrl`: http://localhost:5000\n- `aiUrl`: http://localhost:5003\n- `token`: JWT token (tự động set sau login)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "aiUrl",
+      "value": "http://localhost:5003",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "classroomId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "assignmentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "courseId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "description": "Xác thực: Đăng ký, Đăng nhập, OTP, Đổi mật khẩu",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register"
+            },
+            "description": "Tạo tài khoản mới",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@test.com\",\n  \"password\": \"123456\",\n  \"role\": \"student\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var d=pm.response.json();",
+                  "pm.test('Status 201',()=>pm.response.to.have.status(201));",
+                  "if(d.token) pm.collectionVariables.set('token',d.token);",
+                  "if(d.user?._id) pm.collectionVariables.set('userId',d.user._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login"
+            },
+            "description": "Đăng nhập Admin — token tự động lưu",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@elearning.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var d=pm.response.json();",
+                  "pm.test('Status 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Has token',()=>pm.expect(d.token).to.be.a('string'));",
+                  "if(d.token) pm.collectionVariables.set('token',d.token);",
+                  "if(d.user?._id) pm.collectionVariables.set('userId',d.user._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (Teacher)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login"
+            },
+            "description": "Đăng nhập Giáo viên",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"teacher@elearning.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var d=pm.response.json();",
+                  "if(d.token) pm.collectionVariables.set('token',d.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (Student)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login"
+            },
+            "description": "Đăng nhập Sinh viên",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@elearning.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var d=pm.response.json();",
+                  "if(d.token) pm.collectionVariables.set('token',d.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me"
+            },
+            "description": "Lấy thông tin user đang đăng nhập"
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/forgot-password"
+            },
+            "description": "Gửi OTP reset mật khẩu",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@test.com\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password"
+            },
+            "description": "Đặt lại mật khẩu bằng OTP",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@test.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"newpass123\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/change-password"
+            },
+            "description": "Đổi mật khẩu khi đã đăng nhập",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"123456\",\n  \"newPassword\": \"654321\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👤 Users",
+      "description": "Quản lý người dùng (Admin)",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users"
+            },
+            "description": "Lấy danh sách tất cả users (Admin only)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var d=pm.response.json();",
+                  "pm.test('Has users',()=>pm.expect(d.users).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Users (Filter by role)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users?role=student"
+            },
+            "description": "Lọc users theo role"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Admin Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/admin/stats"
+            },
+            "description": "Thống kê dashboard Admin"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/profile/me"
+            },
+            "description": "Lấy profile bản thân"
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/profile/me"
+            },
+            "description": "Cập nhật profile bản thân",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"phone\": \"0123456789\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}"
+            },
+            "description": "Lấy thông tin user theo ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}"
+            },
+            "description": "Admin cập nhật thông tin user",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin Updated\",\n  \"role\": \"student\",\n  \"teacherId\": \"GV001\",\n  \"subjects\": [\n    \"Toán\",\n    \"Lý\"\n  ]\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Lock User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/toggle-lock"
+            },
+            "description": "Khóa/Mở khóa tài khoản"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}"
+            },
+            "description": "Xóa user (Admin only)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🏫 Classrooms",
+      "description": "Quản lý lớp học, meeting, recordings",
+      "item": [
+        {
+          "name": "Get All Classrooms",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/classrooms"
+            },
+            "description": "Danh sách lớp học"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var d=pm.response.json();",
+                  "if(d.classrooms?.length) pm.collectionVariables.set('classroomId',d.classrooms[0]._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Live Classrooms",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/classrooms/live/now"
+            },
+            "description": "Lấy lớp đang meeting"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Classroom by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/classrooms/{{classroomId}}"
+            },
+            "description": "Chi tiết lớp học"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Classroom",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/classrooms"
+            },
+            "description": "Tạo lớp học mới (Admin)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Lập trình Python\",\n  \"subject\": \"Tin học\",\n  \"classCode\": \"CS101-2024A\",\n  \"semester\": \"HK1 2024-2025\",\n  \"schedule\": {\n    \"dayOfWeek\": [\n      1,\n      3,\n      5\n    ],\n    \"startTime\": \"08:00\",\n    \"endTime\": \"10:00\"\n  }\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Classroom",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/classrooms/{{classroomId}}"
+            },
+            "description": "Cập nhật lớp học (Admin)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Lập trình Python (Updated)\",\n  \"subject\": \"CNTT\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Student to Classroom",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/classrooms/{{classroomId}}/students"
+            },
+            "description": "Thêm SV vào lớp (Admin)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"{{userId}}\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Student from Classroom",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/classrooms/{{classroomId}}/students/{{userId}}"
+            },
+            "description": "Xóa SV khỏi lớp (Admin)"
+          },
+          "response": []
+        },
+        {
+          "name": "Start Meeting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/classrooms/{{classroomId}}/meeting/start"
+            },
+            "description": "Bắt đầu buổi học trực tuyến"
+          },
+          "response": []
+        },
+        {
+          "name": "End Meeting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/classrooms/{{classroomId}}/meeting/end"
+            },
+            "description": "Kết thúc buổi học"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recordings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/classrooms/{{classroomId}}/recordings"
+            },
+            "description": "Danh sách bản ghi lớp học"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Classroom",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/classrooms/{{classroomId}}"
+            },
+            "description": "Xóa lớp học (Admin)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📝 Assignments",
+      "description": "Bài tập, nộp bài, chấm điểm",
+      "item": [
+        {
+          "name": "Get Assignments by Classroom",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assignments/classroom/{{classroomId}}"
+            },
+            "description": "Danh sách bài tập của lớp"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var d=pm.response.json();",
+                  "if(d.assignments?.length) pm.collectionVariables.set('assignmentId',d.assignments[0]._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Assignment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assignments"
+            },
+            "description": "Tạo bài tập mới (Teacher/Admin)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classroom\": \"{{classroomId}}\",\n  \"title\": \"Bài tập 1: Python cơ bản\",\n  \"description\": \"Viết chương trình Hello World\",\n  \"type\": \"homework\",\n  \"dueDate\": \"2025-12-31T23:59:59Z\",\n  \"maxScore\": 100\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var d=pm.response.json();",
+                  "if(d.assignment?._id) pm.collectionVariables.set('assignmentId',d.assignment._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Assignment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assignments/{{assignmentId}}"
+            },
+            "description": "Cập nhật bài tập",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bài tập 1 (Updated)\",\n  \"maxScore\": 150\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Assignment (Student)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assignments/{{assignmentId}}/submit"
+            },
+            "description": "Sinh viên nộp bài",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"print('Hello World')\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Grade Submission",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assignments/{{assignmentId}}/grade/{{userId}}"
+            },
+            "description": "Giáo viên chấm điểm",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 85,\n  \"feedback\": \"Bài làm tốt!\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Submissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assignments/{{assignmentId}}/submissions"
+            },
+            "description": "Xem tất cả bài nộp (Teacher)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Assignment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assignments/{{assignmentId}}"
+            },
+            "description": "Xóa bài tập"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📋 Attendance",
+      "description": "Điểm danh khuôn mặt AI",
+      "item": [
+        {
+          "name": "Create Attendance Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance/sessions"
+            },
+            "description": "Tạo phiên điểm danh (Teacher)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classroomId\": \"{{classroomId}}\",\n  \"startTime\": \"08:00\",\n  \"endTime\": \"08:10\",\n  \"requireFaceVerify\": true,\n  \"lateAfterMinutes\": 5\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var d=pm.response.json();",
+                  "if(d.session?._id) pm.collectionVariables.set('sessionId',d.session._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance/sessions"
+            },
+            "description": "Danh sách phiên điểm danh"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Session by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance/sessions/{{sessionId}}"
+            },
+            "description": "Chi tiết phiên điểm danh"
+          },
+          "response": []
+        },
+        {
+          "name": "Student Check-in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance/sessions/{{sessionId}}/checkin"
+            },
+            "description": "Sinh viên điểm danh (face verify)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"faceVerified\": true,\n  \"faceDistance\": 0.35\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "End Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance/sessions/{{sessionId}}/end"
+            },
+            "description": "Kết thúc phiên điểm danh"
+          },
+          "response": []
+        },
+        {
+          "name": "Export Session",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance/sessions/{{sessionId}}/export"
+            },
+            "description": "Xuất file điểm danh (CSV)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Attendance by Classroom",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance/classroom/{{classroomId}}"
+            },
+            "description": "Lịch sử điểm danh lớp"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Attendance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance/classroom/{{classroomId}}/me"
+            },
+            "description": "Lịch sử điểm danh cá nhân (Student)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🤖 AI Services",
+      "description": "AI Vision, Face, Voice, Recommendation",
+      "item": [
+        {
+          "name": "AI Health Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/health"
+            },
+            "description": "Kiểm tra trạng thái tất cả AI services"
+          },
+          "response": []
+        },
+        {
+          "name": "Face Enroll (Base64)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance/face/enroll"
+            },
+            "description": "Đăng ký khuôn mặt (multipart form-data, cần gửi file ảnh)"
+          },
+          "response": []
+        },
+        {
+          "name": "Face Verify (Base64)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance/face/verify-base64"
+            },
+            "description": "Xác thực khuôn mặt 1:1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image\": \"data:image/jpeg;base64,...\",\n  \"userId\": \"{{userId}}\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Face Verify Multi",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance/face/verify-multi-base64"
+            },
+            "description": "Xác thực khuôn mặt nhiều ảnh",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"images\": [\n    \"data:image/jpeg;base64,...\"\n  ],\n  \"userId\": \"{{userId}}\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Faces",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance/face/my-faces"
+            },
+            "description": "Xem ảnh khuôn mặt đã đăng ký"
+          },
+          "response": []
+        },
+        {
+          "name": "Vision Detect (Base64)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/vision/detect-base64"
+            },
+            "description": "AI nhận diện trạng thái học tập",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image\": \"data:image/jpeg;base64,...\",\n  \"courseId\": \"{{courseId}}\",\n  \"sessionId\": \"{{sessionId}}\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AI Recommend",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/recommend"
+            },
+            "description": "Gợi ý học tập từ AI",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scores\": [\n    75,\n    80,\n    65,\n    90\n  ],\n  \"time_spent\": [\n    30,\n    45,\n    20,\n    60\n  ],\n  \"completed_lessons\": [],\n  \"preferred_subjects\": [\n    \"Toán\"\n  ]\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AI Engagement Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/engagement"
+            },
+            "description": "Phân tích mức độ tương tác",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"avg_daily_study_min\": 45,\n  \"login_freq_weekly\": 3,\n  \"scores\": [\n    70,\n    75,\n    80\n  ],\n  \"time_spent\": [\n    30,\n    45,\n    60\n  ]\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AI My Data (Full Analytics)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/my-data"
+            },
+            "description": "Lấy toàn bộ dữ liệu AI analytics cá nhân\n\nBao gồm:\n- Predicted scores\n- Score trajectory\n- Risk map\n- Study time estimates\n- Subject clusters\n- Smart insights"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var d=pm.response.json();",
+                  "pm.test('Has ai_predictions',()=>pm.expect(d.ai_predictions).to.be.an('object'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🧠 AI Service (Direct :5003)",
+      "description": "Gọi trực tiếp AI Recommendation Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{aiUrl}}/health"
+            },
+            "description": "Kiểm tra AI service",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Subjects",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{aiUrl}}/subjects"
+            },
+            "description": "Danh sách môn học trong hệ thống",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Lessons",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{aiUrl}}/lessons"
+            },
+            "description": "Danh sách bài học",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Recommend",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{aiUrl}}/recommend"
+            },
+            "description": "Gợi ý học tập (gọi trực tiếp)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{userId}}\",\n  \"role\": \"student\",\n  \"scores\": [\n    75,\n    80,\n    65\n  ],\n  \"time_spent\": [\n    30,\n    45,\n    20\n  ],\n  \"completed_lessons\": [],\n  \"avg_daily_study_min\": 60,\n  \"login_freq_weekly\": 4\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Analyze Engagement",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{aiUrl}}/analyze-engagement"
+            },
+            "description": "Phân tích engagement (gọi trực tiếp)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{userId}}\",\n  \"avg_daily_study_min\": 45,\n  \"login_freq_weekly\": 3,\n  \"scores\": [\n    70,\n    75,\n    80\n  ]\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reload Models",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{aiUrl}}/reload"
+            },
+            "description": "Reload data + retrain models",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📚 Courses (Legacy)",
+      "description": "Khóa học (module cũ)",
+      "item": [
+        {
+          "name": "Get All Courses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/courses"
+            },
+            "description": "Danh sách khóa học"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var d=pm.response.json();",
+                  "if(d.length) pm.collectionVariables.set('courseId',d[0]._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Course by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/courses/{{courseId}}"
+            },
+            "description": "Chi tiết khóa học"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/courses"
+            },
+            "description": "Tạo khóa học (Teacher/Admin)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Lập trình Web\",\n  \"subject\": \"CNTT\",\n  \"difficulty\": \"medium\",\n  \"schedule\": {\n    \"day\": \"Monday\",\n    \"startTime\": \"08:00\",\n    \"endTime\": \"10:00\"\n  }\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Enroll Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/courses/{{courseId}}/enroll"
+            },
+            "description": "Sinh viên đăng ký khóa học"
+          },
+          "response": []
+        },
+        {
+          "name": "Start Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/courses/{{courseId}}/session/start"
+            },
+            "description": "Bắt đầu phiên học",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Buổi 1: Giới thiệu\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "End Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/courses/session/{{sessionId}}/end"
+            },
+            "description": "Kết thúc phiên học"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Session",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/courses/session/{{sessionId}}"
+            },
+            "description": "Chi tiết phiên học"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Course Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/courses/{{courseId}}/sessions"
+            },
+            "description": "Lịch sử phiên học"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "⚙️ System",
+      "description": "Health check, status",
+      "item": [
+        {
+          "name": "Backend Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/health"
+            },
+            "description": "Kiểm tra backend server",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
